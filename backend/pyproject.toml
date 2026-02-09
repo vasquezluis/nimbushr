@@ -8,7 +8,10 @@ dependencies = [
     "chromadb>=1.4.1",
     "fastapi>=0.128.1",
     "langchain>=1.2.8",
+    "langchain-chroma>=1.1.0",
+    "langchain-openai>=1.1.8",
     "openai>=2.17.0",
     "ruff>=0.15.0",
+    "unstructured[pdf]>=0.18.31",
     "uvicorn>=0.40.0",
 ]
