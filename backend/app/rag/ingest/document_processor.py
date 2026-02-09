@@ -3,10 +3,12 @@ Document Processing Module
 Handles chunking operations
 """
 
+from typing import List
+from settings import settings
 from unstructured.chunking.title import chunk_by_title
 
 
-def create_chunks_by_title(elements):
+def create_chunks_by_title(elements) -> List:
     """
     Create intelligent chunks using title-based strategy.
 
@@ -16,14 +18,16 @@ def create_chunks_by_title(elements):
     Returns:
         List of chunked elements
     """
-    print("🔨 Creating smart chunks...")
+    print("Creating smart chunks...")
+
+    chunk_config = settings.get_chunk_config()
 
     chunks = chunk_by_title(
         elements,
-        max_characters=3000,  # Hard limit - never exceed 3000 characters per chunk
-        new_after_n_chars=2400,  # Try to start a new chunk after 2400 characters
-        combine_text_under_n_chars=500,  # Merge tiny chunks under 500 chars
+        max_characters=chunk_config["max_characters"],
+        new_after_n_chars=chunk_config["new_after_n_chars"],
+        combine_text_under_n_chars=chunk_config["combine_text_under_n_chars"],
     )
 
-    print(f"✅ Created {len(chunks)} chunks")
+    print(f"Created {len(chunks)} chunks")
     return chunks

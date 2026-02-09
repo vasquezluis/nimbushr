@@ -9,7 +9,16 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langchain_core.documents import Document
 
+from settings import settings
 from .content_analyzer import separate_content_types
+
+
+def should_use_ai_summary(content_data):
+    """Only use AI for complex multimodal content"""
+    has_multiple_tables = len(content_data["tables"]) > 2
+    has_images = len(content_data["images"]) > 0
+    is_complex = has_multiple_tables or has_images
+    return is_complex
 
 
 def create_ai_enhanced_summary(text: str, tables: List[str], images: List[str]) -> str:
@@ -26,7 +35,7 @@ def create_ai_enhanced_summary(text: str, tables: List[str], images: List[str]) 
     """
     try:
         # Initialize LLM (needs vision model for images)
-        llm = ChatOpenAI(model="gpt-4o", temperature=0)
+        llm = ChatOpenAI(model=settings.llm_model, temperature=settings.llm_temperature)
 
         # Build the text prompt
         prompt_text = f"""You are creating a searchable description for document content retrieval.
@@ -76,7 +85,7 @@ def create_ai_enhanced_summary(text: str, tables: List[str], images: List[str]) 
         return response.content
 
     except Exception as e:
-        print(f"     ❌ AI summary failed: {e}")
+        print(f"AI summary failed: {e}")
         # Fallback to simple summary
         summary = f"{text[:300]}..."
         if tables:
@@ -96,55 +105,72 @@ def summarise_chunks(chunks) -> List[Document]:
     Returns:
         List of LangChain Document objects with enhanced content and metadata
     """
-    print("🧠 Processing chunks with AI Summaries...")
+    print("Processing chunks with AI Summaries...")
 
     langchain_documents = []
     total_chunks = len(chunks)
 
+    # Track AI summarization usage
+    ai_summary_count = 0
+
     for i, chunk in enumerate(chunks):
         current_chunk = i + 1
-        print(f"   Processing chunk {current_chunk}/{total_chunks}")
 
         # Analyze chunk content
         content_data = separate_content_types(chunk)
 
-        # Debug prints
-        print(f"     Types found: {content_data['types']}")
-        print(
-            f"     Tables: {len(content_data['tables'])}, Images: {len(content_data['images'])}"
-        )
+        num_tables = len(content_data["tables"])
+        num_images = len(content_data["images"])
 
-        # Create AI-enhanced summary if chunk has tables/images
-        if content_data["tables"] or content_data["images"]:
-            print(f"     → Creating AI summary for mixed content...")
+        # Determine if AI summarization should be used
+        should_summarize = settings.should_use_ai_summary(num_tables, num_images)
+
+        # Create enhanced content based on settings
+        if should_summarize:
+            print(
+                f"[{current_chunk}/{total_chunks}] AI summarizing (tables={num_tables}, images={num_images})"
+            )
+
             try:
                 enhanced_content = create_ai_enhanced_summary(
                     content_data["text"], content_data["tables"], content_data["images"]
                 )
-                print(f"     → AI summary created successfully")
-                print(f"     → Enhanced content preview: {enhanced_content[:200]}...")
+                ai_summary_count += 1
             except Exception as e:
-                print(f"     ❌ AI summary failed: {e}")
+                print(f"AI summary failed, using raw text: {e}")
                 enhanced_content = content_data["text"]
         else:
-            print(f"     → Using raw text (no tables/images)")
+            print(
+                f"[{current_chunk}/{total_chunks}] Using raw text (tables={num_tables}, images={num_images})"
+            )
             enhanced_content = content_data["text"]
 
         # Create LangChain Document with rich metadata
         doc = Document(
             page_content=enhanced_content,
             metadata={
+                "chunk_index": i,
+                "has_tables": num_tables > 0,
+                "has_images": num_images > 0,
+                "num_tables": num_tables,
+                "num_images": num_images,
+                "ai_summarized": should_summarize,
+                "content_types": ",".join(content_data["types"]),
                 "original_content": json.dumps(
                     {
                         "raw_text": content_data["text"],
                         "tables_html": content_data["tables"],
                         "images_base64": content_data["images"],
                     }
-                )
+                ),
             },
         )
 
         langchain_documents.append(doc)
 
-    print(f"✅ Processed {len(langchain_documents)} chunks")
+    print(f"\nProcessed {len(langchain_documents)} chunks")
+    if settings.use_ai_summarization:
+        print(f"AI summaries: {ai_summary_count}/{total_chunks} chunks")
+        print(f"Cost estimate: ~${ai_summary_count * 0.02:.2f} (rough)")
+
     return langchain_documents

@@ -7,17 +7,15 @@ from typing import List
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
+from settings import settings
 
 
-def create_vector_store(
-    documents: List[Document], persist_directory: str = "chroma_db"
-) -> Chroma:
+def create_vector_store(documents: List[Document]) -> Chroma:
     """
     Create and persist ChromaDB vector store.
 
     Args:
         documents: List of LangChain Document objects to store
-        persist_directory: Directory path to persist the vector store
 
     Returns:
         ChromaDB vectorstore instance
@@ -31,10 +29,10 @@ def create_vector_store(
     vectorstore = Chroma.from_documents(
         documents=documents,
         embedding=embedding_model,
-        persist_directory=persist_directory,
-        collection_metadata={"hnsw:space": "cosine"},
+        persist_directory=settings.vector_db_dir,
+        collection_name=settings.chroma_collection_name,
+        collection_metadata={"hnsw:space": settings.chroma_distance_metric},
     )
     print("--- Finished creating vector store ---")
 
-    print(f"✅ Vector store created and saved to {persist_directory}")
     return vectorstore
