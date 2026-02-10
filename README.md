@@ -146,17 +146,20 @@ from langchain_openai import OpenAIEmbeddings
 
 db = Chroma(
     persist_directory='chroma_db',
+    collection_name='nimbus_hr_docs',
     embedding_function=OpenAIEmbeddings(model='text-embedding-3-small')
 )
 
 collection = db._collection
+count = collection.count()
+print(f'Documents in collection: {count}')
 
-# Peek at one chunk
-peek = collection.peek(limit=1)
-
-print('ID:', peek['ids'][0])
-print('Document:', peek['documents'][0])
-print('Metadata:', peek['metadatas'][0])
+if count > 0:
+    peek = collection.peek(limit=1)
+    print('ID:', peek['ids'][0])
+    print('Metadata:', peek['metadatas'][0])
+else:
+    print('Collection is empty!')
 "
 ```
 

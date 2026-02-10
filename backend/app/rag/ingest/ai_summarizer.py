@@ -135,6 +135,7 @@ def summarise_chunks(chunks) -> List[Document]:
                 enhanced_content = create_ai_enhanced_summary(
                     content_data["text"], content_data["tables"], content_data["images"]
                 )
+
                 ai_summary_count += 1
             except Exception as e:
                 print(f"AI summary failed, using raw text: {e}")
@@ -144,6 +145,23 @@ def summarise_chunks(chunks) -> List[Document]:
                 f"[{current_chunk}/{total_chunks}] Using raw text (tables={num_tables}, images={num_images})"
             )
             enhanced_content = content_data["text"]
+
+        # Create a lightweight summary of original content for metadata
+        original_content_summary = {
+            "text_length": len(content_data["text"]),
+            "num_tables": num_tables,
+            "num_images": num_images,
+            "text_preview": content_data["text"][:500] if content_data["text"] else "",
+        }
+
+        # TODO: store the full original_content in a separate system
+        # (e.g., S3, database) and reference it by chunk_id
+        # full_original_content = json.dumps({
+        #     "raw_text": content_data["text"],
+        #     "tables_html": content_data["tables"],
+        #     "images_base64": content_data["images"],
+        # })
+        # save_to_external_storage(chunk_id=f"{filename}_{i}", content=full_original_content)
 
         # Create LangChain Document with rich metadata
         doc = Document(
@@ -156,13 +174,11 @@ def summarise_chunks(chunks) -> List[Document]:
                 "num_images": num_images,
                 "ai_summarized": should_summarize,
                 "content_types": ",".join(content_data["types"]),
-                "original_content": json.dumps(
-                    {
-                        "raw_text": content_data["text"],
-                        "tables_html": content_data["tables"],
-                        "images_base64": content_data["images"],
-                    }
-                ),
+                "text_length": len(content_data["text"]),
+                "text_preview": content_data["text"][:200],  # Short preview
+                "content_summary": json.dumps(
+                    original_content_summary
+                ),  # Store a compact summary
             },
         )
 
