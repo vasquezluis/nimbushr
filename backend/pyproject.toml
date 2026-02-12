@@ -14,6 +14,7 @@ dependencies = [
     "pydantic-settings>=2.12.0",
     "python-dotenv>=1.2.1",
     "ruff>=0.15.0",
+    "sentence-transformers>=5.2.2",
     "unstructured[pdf]>=0.18.31",
     "uvicorn>=0.40.0",
 ]

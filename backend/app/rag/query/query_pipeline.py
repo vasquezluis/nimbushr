@@ -14,39 +14,13 @@ from .query_engine import generate_final_answer
 load_dotenv()
 
 
-def main():
+def run_query(query: str):
     """Main entry point for query pipeline."""
-
-    print("\n" + "=" * 70)
-    print("NIMBUS HR - RAG QUERY PIPELINE")
-    print("=" * 70)
-
-    # Display current configuration
-    settings.display_config()
-
-    # Validate environment
-    try:
-        settings.validate_paths()
-    except FileNotFoundError as e:
-        print(f"Configuration Error: {e}")
-        return 1
-    except Exception as e:
-        print(f"Validation Error: {e}")
-        return 1
-
-    # Check for OpenAI API key
-    if not settings.openai_api_key:
-        print("Error: OPENAI_API_KEY not found in environment")
-        print("Please create a .env file with: OPENAI_API_KEY=your-key-here")
-        return 1
 
     try:
         # Load vector store
         print("Loading vector store...", flush=True)
         db = load_vector_store()
-
-        # Test query
-        query: str = "What are the raises and promotions?"
 
         # Retrieve chunks
         print(f"Retrieving top {settings.top_k_value} chunks...", flush=True)
@@ -61,6 +35,12 @@ def main():
 
         # Export chunks
         # export_chunks_to_json(chunks)
+
+        # Rerank if enabled
+        if settings.use_reranking:
+            from .query_engine import rerank_chunks
+
+            chunks = rerank_chunks(chunks, query)
 
         # Generate answer
         answer = generate_final_answer(chunks, query)
@@ -77,7 +57,12 @@ def main():
             }
             sources.append(source_info)
 
-        return {"answer": answer, "sources": sources, "num_chunks": len(chunks)}
+        return {
+            "answer": answer,
+            "sources": sources,
+            "num_chunks": len(chunks),
+            "chunks_reranked": settings.use_reranking,
+        }
 
     except Exception as e:
         print(f"Query pipeline failed: {e}")
@@ -101,7 +86,7 @@ if __name__ == "__main__":
     print("RAG QUERY TEST")
     print("=" * 70)
 
-    result = main()
+    result = run_query("What are the workspace requirements?")
 
     print("\n" + "=" * 70)
     print("ANSWER")

@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     # Retriever Config
     # ======================
     top_k_value: int = 3
+    use_mmr: bool = True
+    max_context_length: int = 12000
+    use_reranking: bool = False
+    mmr_lambda: float = 0.5
 
     # Only use AI summarization for chunks with this many tables or more
     ai_summary_min_tables: int = 2
