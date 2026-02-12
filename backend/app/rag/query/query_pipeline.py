@@ -9,19 +9,16 @@ from .vector_store import load_vector_store
 from .query_engine import retrieve_chunks
 from .export_chunks import export_chunks_to_json
 from .query_engine import generate_final_answer
+from langchain_chroma import Chroma
 
 # Load environment variables
 load_dotenv()
 
 
-def run_query(query: str):
+def run_query(query: str, db: Chroma):
     """Main entry point for query pipeline."""
 
     try:
-        # Load vector store
-        print("Loading vector store...", flush=True)
-        db = load_vector_store()
-
         # Retrieve chunks
         print(f"Retrieving top {settings.top_k_value} chunks...", flush=True)
         chunks = retrieve_chunks(db, query)

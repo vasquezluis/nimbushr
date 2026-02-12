@@ -19,7 +19,7 @@ uv run python -m app.rag.query.query_pipeline
 ### fastapi
 
 ```bash
-uvicorn main:app --reload
+uv run uvicorn app.main:app --reload
 ```
 
 ```

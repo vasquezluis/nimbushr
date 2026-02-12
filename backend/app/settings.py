@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     top_k_value: int = 3
     use_mmr: bool = True
     max_context_length: int = 12000
-    use_reranking: bool = False
+    use_reranking: bool = True
     mmr_lambda: float = 0.5
 
     # Only use AI summarization for chunks with this many tables or more
