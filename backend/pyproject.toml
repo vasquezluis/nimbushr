@@ -17,4 +17,5 @@ dependencies = [
     "sentence-transformers>=5.2.2",
     "unstructured[pdf]>=0.18.31",
     "uvicorn>=0.40.0",
+    "aiohttp>=3.9.0",
 ]
