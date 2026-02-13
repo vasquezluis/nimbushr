@@ -1,0 +1,196 @@
+"""
+Files API Route
+Returns list of files loaded into the vector store and serves PDF files
+"""
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
+from typing import List
+
+from app.api.deps import get_db
+from app.settings import settings
+
+
+router = APIRouter(tags=["Files"])
+
+
+class FileInfo(BaseModel):
+    """Information about a loaded file"""
+
+    filename: str
+    source_type: str
+    chunk_count: int
+    has_tables: bool
+    has_images: bool
+    ai_summarized_chunks: int
+
+
+class FilesListResponse(BaseModel):
+    """Response containing list of loaded files"""
+
+    files: List[FileInfo]
+    total_files: int
+    total_chunks: int
+
+
+@router.get("/files", response_model=FilesListResponse)
+async def list_loaded_files(db=Depends(get_db)):
+    """
+    Get list of all files loaded into the vector store.
+
+    Returns:
+        FilesListResponse with file metadata and statistics
+    """
+    try:
+        # Get all documents from the collection
+        collection = db._collection
+
+        # Get all metadata (limit can be adjusted based on your needs)
+        all_data = collection.get(include=["metadatas"])
+
+        if not all_data or not all_data.get("metadatas"):
+            return FilesListResponse(files=[], total_files=0, total_chunks=0)
+
+        # Aggregate data by source file
+        files_dict = {}
+
+        for metadata in all_data["metadatas"]:
+            source_file = metadata.get("source_file", "Unknown")
+            source_type = metadata.get("source_type", "unknown")
+
+            if source_file not in files_dict:
+                files_dict[source_file] = {
+                    "filename": source_file,
+                    "source_type": source_type,
+                    "chunk_count": 0,
+                    "has_tables": False,
+                    "has_images": False,
+                    "ai_summarized_chunks": 0,
+                }
+
+            # Update statistics
+            files_dict[source_file]["chunk_count"] += 1
+
+            if metadata.get("has_tables", False):
+                files_dict[source_file]["has_tables"] = True
+
+            if metadata.get("has_images", False):
+                files_dict[source_file]["has_images"] = True
+
+            if metadata.get("ai_summarized", False):
+                files_dict[source_file]["ai_summarized_chunks"] += 1
+
+        # Convert to list and sort by filename
+        files_list = sorted(files_dict.values(), key=lambda x: x["filename"])
+
+        return FilesListResponse(
+            files=files_list,
+            total_files=len(files_list),
+            total_chunks=len(all_data["metadatas"]),
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error retrieving files list: {str(e)}"
+        )
+
+
+@router.get("/files/{filename}")
+async def get_file(filename: str):
+    """
+    Serve a PDF file from the data directory.
+
+    Args:
+        filename: Name of the PDF file to retrieve
+
+    Returns:
+        FileResponse with the PDF file
+
+    Raises:
+        HTTPException: If file not found or invalid filename
+    """
+    try:
+        # Security: Prevent directory traversal
+        if ".." in filename or "/" in filename or "\\" in filename:
+            raise HTTPException(status_code=400, detail="Invalid filename")
+
+        # Construct file path
+        file_path = settings.data_dir / filename
+
+        # Verify file exists and is a PDF
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"File not found: {filename}")
+
+        if not file_path.is_file():
+            raise HTTPException(status_code=400, detail="Path is not a file")
+
+        if file_path.suffix.lower() != ".pdf":
+            raise HTTPException(status_code=400, detail="Only PDF files are supported")
+
+        # Return the file
+        return FileResponse(
+            path=str(file_path), media_type="application/pdf", filename=filename
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error serving file: {str(e)}")
+
+
+@router.get("/files/{filename}/chunks")
+async def get_file_chunks(filename: str, db=Depends(get_db)):
+    """
+    Get all chunks for a specific file with their metadata.
+    Useful for showing which parts of the document were used in RAG responses.
+
+    Args:
+        filename: Name of the source file
+
+    Returns:
+        List of chunks with metadata for the specified file
+    """
+    try:
+        collection = db._collection
+
+        # Get all documents and filter by source_file
+        all_data = collection.get(
+            include=["metadatas", "documents"], where={"source_file": filename}
+        )
+
+        if not all_data or not all_data.get("metadatas"):
+            raise HTTPException(
+                status_code=404, detail=f"No chunks found for file: {filename}"
+            )
+
+        # Build response with chunk details
+        chunks = []
+        for i, (doc, metadata) in enumerate(
+            zip(all_data["documents"], all_data["metadatas"])
+        ):
+            chunk_info = {
+                "chunk_index": metadata.get("chunk_index", i),
+                "content_preview": doc[:200] + "..." if len(doc) > 200 else doc,
+                "content_length": len(doc),
+                "has_tables": metadata.get("has_tables", False),
+                "has_images": metadata.get("has_images", False),
+                "num_tables": metadata.get("num_tables", 0),
+                "num_images": metadata.get("num_images", 0),
+                "ai_summarized": metadata.get("ai_summarized", False),
+                "content_types": metadata.get("content_types", ""),
+                "text_preview": metadata.get("text_preview", ""),
+            }
+            chunks.append(chunk_info)
+
+        # Sort by chunk_index
+        chunks.sort(key=lambda x: x["chunk_index"])
+
+        return {"filename": filename, "total_chunks": len(chunks), "chunks": chunks}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error retrieving chunks: {str(e)}"
+        )

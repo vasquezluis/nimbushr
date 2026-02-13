@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
 from app.rag.query.vector_store import load_vector_store
-from app.api.v1.routes import query
+from app.api.v1.routes import query, files
 
 load_dotenv()
 
@@ -21,11 +21,12 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(
         title="RAG API",
-        version="1.0.0",
+        version="1.0.1",
         lifespan=lifespan,
     )
 
     app.include_router(query.router, prefix="/api/v1")
+    app.include_router(files.router, prefix="/api/v1")
 
     return app
 
