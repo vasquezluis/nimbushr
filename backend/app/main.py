@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
@@ -23,6 +24,19 @@ def create_app() -> FastAPI:
         title="RAG API",
         version="1.0.1",
         lifespan=lifespan,
+    )
+
+    # Configure CORS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:3000",  # Next.js default port
+            "http://127.0.0.1:3000",
+            "http://localhost:3001",  # Alternative port
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],  # Allows all methods
+        allow_headers=["*"],  # Allows all headers
     )
 
     app.include_router(query.router, prefix="/api/v1")

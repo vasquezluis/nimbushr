@@ -10,7 +10,7 @@ export default function Home() {
   return (
     <div className="flex h-screen w-screen bg-[#0A0A0A] overflow-hidden">
       {/* Chat Area - Takes remaining space */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
         <ChatArea />
       </div>
 
