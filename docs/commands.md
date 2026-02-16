@@ -6,7 +6,7 @@
 
 ```bash
 (backend)
-uv run app/ingest.py
+uv run python -m app.ingest
 ```
 
 ### query setup

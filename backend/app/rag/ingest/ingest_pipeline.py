@@ -6,7 +6,7 @@ Orchestrates the complete RAG ingestion
 from typing import List
 from langchain_core.documents import Document
 
-from loaders.pdf_loader import load_pdfs_from_directory
+from app.rag.loaders.pdf_loader import load_pdfs_from_directory
 from .document_processor import create_chunks_by_title
 from .ai_summarizer import summarise_chunks
 from .vector_store import create_vector_store

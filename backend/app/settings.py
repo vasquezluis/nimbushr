@@ -19,9 +19,10 @@ class Settings(BaseSettings):
     # ======================
     # Paths
     # ======================
-    # Automatically resolve project root
+    # Use absolute path from settings file location
     project_root: Path = Path(__file__).parent.parent.parent
     data_dir: Path = project_root / "backend" / "data" / "pdfs"
+
     vector_db_dir: str = "chroma_db"
 
     # ======================
@@ -45,9 +46,9 @@ class Settings(BaseSettings):
     # ======================
     # Chunking Config
     # ======================
-    chunk_max_chars: int = 3000
-    chunk_new_after: int = 2400
-    chunk_combine_under: int = 500
+    chunk_max_chars: int = 1200
+    chunk_new_after: int = 900
+    chunk_combine_under: int = 300
 
     # ======================
     # AI Summarization Config
@@ -58,7 +59,7 @@ class Settings(BaseSettings):
     # ======================
     # Retriever Config
     # ======================
-    top_k_value: int = 3
+    top_k_chunks: int = 5
     use_mmr: bool = True
     max_context_length: int = 12000
     use_reranking: bool = True

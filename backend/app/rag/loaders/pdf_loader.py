@@ -3,7 +3,7 @@ PDF Loader Module
 Handles loading and parsing PDF documents
 """
 
-from settings import settings
+from app.settings import settings
 from typing import List, Dict
 from unstructured.partition.pdf import partition_pdf
 

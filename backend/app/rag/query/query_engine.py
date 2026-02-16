@@ -21,15 +21,15 @@ def retrieve_chunks(vectorstore: Chroma, query: str) -> List:
     Returns:
         List of retrieved document chunks
     """
-    print(f"Retrieving top {settings.top_k_value} chunks for query: {query}")
+    print(f"Retrieving top {settings.top_k_chunks} chunks for query: {query}")
 
     if settings.use_mmr:
         # Use MMR for diverse results (reduces redundancy)
         retriever = vectorstore.as_retriever(
             search_type="mmr",
             search_kwargs={
-                "k": settings.top_k_value,
-                "fetch_k": settings.top_k_value * 3,  # Fetch more, then filter
+                "k": settings.top_k_chunks,
+                "fetch_k": settings.top_k_chunks * 3,  # Fetch more, then filter
                 "lambda_mult": settings.mmr_lambda,  # Balance between relevance and diversity
             },
         )
@@ -37,7 +37,7 @@ def retrieve_chunks(vectorstore: Chroma, query: str) -> List:
         retriever = vectorstore.as_retriever(
             search_type="similarity_score_threshold",
             search_kwargs={
-                "k": settings.top_k_value,
+                "k": settings.top_k_chunks,
                 "score_threshold": 0.5,
             },  # filter low relevance chunks
         )

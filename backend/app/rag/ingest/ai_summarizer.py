@@ -9,7 +9,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langchain_core.documents import Document
 
-from settings import settings
+from app.settings import settings
 from .content_analyzer import separate_content_types
 
 

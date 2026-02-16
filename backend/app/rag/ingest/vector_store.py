@@ -7,7 +7,7 @@ from typing import List
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
-from settings import settings
+from app.settings import settings
 
 
 def create_vector_store(documents: List[Document]) -> Chroma:

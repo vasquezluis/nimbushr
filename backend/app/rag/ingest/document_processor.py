@@ -4,7 +4,7 @@ Handles chunking operations
 """
 
 from typing import List
-from settings import settings
+from app.settings import settings
 from unstructured.chunking.title import chunk_by_title
 
 

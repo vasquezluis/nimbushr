@@ -20,7 +20,7 @@ def run_query(query: str, db: Chroma):
 
     try:
         # Retrieve chunks
-        print(f"Retrieving top {settings.top_k_value} chunks...", flush=True)
+        print(f"Retrieving top {settings.top_k_chunks} chunks...", flush=True)
         chunks = retrieve_chunks(db, query)
 
         if not chunks:
