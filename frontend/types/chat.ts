@@ -30,3 +30,8 @@ export interface ChatInputProps {
   isLoading: boolean;
   onCancel?: () => void;
 }
+
+export interface MarkdownRendererProps {
+  content: string;
+  className?: string;
+}

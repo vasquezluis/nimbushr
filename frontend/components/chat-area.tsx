@@ -125,7 +125,7 @@ export function ChatArea() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-[#0A0A0A]">
+    <div className="flex flex-col h-full bg-[#0A0A0A]">
       {/* Messages Area */}
       <div className="flex-1 overflow-hidden">
         <MessageList

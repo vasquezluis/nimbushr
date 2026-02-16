@@ -3,6 +3,7 @@
 import { format } from "date-fns";
 import { User, Bot, FileText, Table, Image, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { MessageBubbleProps } from "@/types/chat";
 
 export function MessageBubble({ message, isLatest }: MessageBubbleProps) {
@@ -45,9 +46,15 @@ export function MessageBubble({ message, isLatest }: MessageBubbleProps) {
           }
         `}
         >
-          <p className="text-white/90 text-[15px] leading-relaxed whitespace-pre-wrap">
-            {message.content}
-          </p>
+          {isUser ? (
+            <p className="text-white/90 text-[15px] leading-relaxed whitespace-pre-wrap">
+              {message.content}
+            </p>
+          ) : (
+            <div className="text-[15px] leading-relaxed">
+              <MarkdownRenderer content={message.content} />
+            </div>
+          )}
 
           {/* Streaming Indicator */}
           {message.isStreaming && (
