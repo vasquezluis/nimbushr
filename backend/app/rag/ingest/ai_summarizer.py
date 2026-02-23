@@ -3,7 +3,6 @@ AI Summarization Module
 Handles AI-enhanced content summarization using multimodal LLM
 """
 
-import json
 from typing import List
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
@@ -31,7 +30,7 @@ def create_ai_enhanced_summary(text: str, tables: List[str], images: List[str]) 
         images: List of base64 encoded images
 
     Returns:
-        Enhanced, searchable description of the content
+        Searchable description of the content
     """
     try:
         # Initialize LLM (needs vision model for images)
@@ -97,15 +96,15 @@ def create_ai_enhanced_summary(text: str, tables: List[str], images: List[str]) 
 
 def summarise_chunks(chunks) -> List[Document]:
     """
-    Process all chunks with AI Summaries.
+    Process all chunks with AI Summaries and metadata.
 
     Args:
         chunks: List of chunked elements to process
 
     Returns:
-        List of LangChain Document objects with enhanced content and metadata
+        List of LangChain Document objects with content and metadata
     """
-    print("Processing chunks with AI Summaries...")
+    print("Processing chunks with AI Summaries and metadata extraction...")
 
     langchain_documents = []
     total_chunks = len(chunks)
@@ -121,14 +120,18 @@ def summarise_chunks(chunks) -> List[Document]:
 
         num_tables = len(content_data["tables"])
         num_images = len(content_data["images"])
+        section_title = content_data["section_title"]
+        page_number = content_data["page_number"]
+        page_numbers = content_data["page_numbers"]
 
         # Determine if AI summarization should be used
         should_summarize = settings.should_use_ai_summary(num_tables, num_images)
 
-        # Create enhanced content based on settings
+        # Create content based on settings
         if should_summarize:
             print(
-                f"[{current_chunk}/{total_chunks}] AI summarizing (tables={num_tables}, images={num_images})"
+                f"[{current_chunk}/{total_chunks}] AI summarizing "
+                f"(tables={num_tables}, images={num_images}, page={page_number})"
             )
 
             try:
@@ -142,44 +145,37 @@ def summarise_chunks(chunks) -> List[Document]:
                 enhanced_content = content_data["text"]
         else:
             print(
-                f"[{current_chunk}/{total_chunks}] Using raw text (tables={num_tables}, images={num_images})"
+                f"[{current_chunk}/{total_chunks}] Using raw text "
+                f"(tables={num_tables}, images={num_images}, page={page_number})"
             )
             enhanced_content = content_data["text"]
 
-        # Create a lightweight summary of original content for metadata
-        original_content_summary = {
-            "text_length": len(content_data["text"]),
-            "num_tables": num_tables,
-            "num_images": num_images,
-            "text_preview": content_data["text"][:500] if content_data["text"] else "",
+        # Build optimized metadata - keeping only essential fields
+        metadata = {
+            # Document Location (Essential for citations)
+            "chunk_index": i,
+            "page_number": page_number,
+            "section_title": section_title or "Unknown Section",
+            # Content Type Flags (Useful for filtering/display)
+            "has_tables": num_tables > 0,
+            "has_images": num_images > 0,
+            "ai_summarized": should_summarize,
+            # Optional: Multi-page chunk support
+            "page_span": (
+                f"{min(page_numbers)}-{max(page_numbers)}"
+                if len(page_numbers) > 1
+                else None
+            ),
         }
 
-        # TODO: store the full original_content in a separate system
-        # (e.g., S3, database) and reference it by chunk_id
-        # full_original_content = json.dumps({
-        #     "raw_text": content_data["text"],
-        #     "tables_html": content_data["tables"],
-        #     "images_base64": content_data["images"],
-        # })
-        # save_to_external_storage(chunk_id=f"{filename}_{i}", content=full_original_content)
+        # Add text preview only if chunk is very short (for debugging)
+        if len(content_data["text"]) < 100:
+            metadata["text_preview"] = content_data["text"]
 
-        # Create LangChain Document with rich metadata
+        # Create LangChain Document with optimized metadata
         doc = Document(
             page_content=enhanced_content,
-            metadata={
-                "chunk_index": i,
-                "has_tables": num_tables > 0,
-                "has_images": num_images > 0,
-                "num_tables": num_tables,
-                "num_images": num_images,
-                "ai_summarized": should_summarize,
-                "content_types": ",".join(content_data["types"]),
-                "text_length": len(content_data["text"]),
-                "text_preview": content_data["text"][:200],  # Short preview
-                "content_summary": json.dumps(
-                    original_content_summary
-                ),  # Store a compact summary
-            },
+            metadata=metadata,
         )
 
         langchain_documents.append(doc)
@@ -188,5 +184,19 @@ def summarise_chunks(chunks) -> List[Document]:
     if settings.use_ai_summarization:
         print(f"AI summaries: {ai_summary_count}/{total_chunks} chunks")
         print(f"Cost estimate: ~${ai_summary_count * 0.02:.2f} (rough)")
+
+    # Count chunks with section titles
+    chunks_with_titles = sum(
+        1
+        for doc in langchain_documents
+        if doc.metadata.get("section_title") != "Unknown Section"
+    )
+    print(f"Chunks with section titles: {chunks_with_titles}/{total_chunks}")
+
+    # Count chunks with page numbers
+    chunks_with_pages = sum(
+        1 for doc in langchain_documents if doc.metadata.get("page_number") is not None
+    )
+    print(f"Chunks with page numbers: {chunks_with_pages}/{total_chunks}")
 
     return langchain_documents

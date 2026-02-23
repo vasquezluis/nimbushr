@@ -1,6 +1,6 @@
 """
-Query Engine Module
-Handles RAG queries, retrieval, and answer generation
+Query Engine Module - IMPROVED
+Handles RAG queries, retrieval, and answer generation with enhanced metadata
 """
 
 from typing import List
@@ -107,11 +107,11 @@ def rerank_chunks(chunks: List, query: str, top_n: int = None) -> List:
 def generate_final_answer(chunks: List, query: str) -> str:
     """
     Generate final answer using multimodal content from retrieved chunks.
+    Includes metadata (section titles, page numbers) in context.
 
     Args:
         chunks: List of retrieved document chunks
         query: Original query string
-        max_context_length: Maximum characters for context (prevents token overflow)
 
     Returns:
         Generated answer as string
@@ -126,38 +126,44 @@ def generate_final_answer(chunks: List, query: str) -> str:
         chunks_used = 0
 
         for i, chunk in enumerate(chunks):
+            # Extract metadata
             source_file = chunk.metadata.get("source_file", "Unknown")
             chunk_index = chunk.metadata.get("chunk_index", "?")
+            section_title = chunk.metadata.get("section_title", "Unknown Section")
+            page_number = chunk.metadata.get("page_number")
+            page_span = chunk.metadata.get("page_span")
             ai_summarized = chunk.metadata.get("ai_summarized", False)
             has_tables = chunk.metadata.get("has_tables", False)
             has_images = chunk.metadata.get("has_images", False)
-            num_tables = chunk.metadata.get("num_tables", 0)
-            num_images = chunk.metadata.get("num_images", 0)
 
-            # Build context header
-            context_header = (
-                f"--- Document {i+1} (Source: {source_file}, Chunk: {chunk_index}) ---"
-            )
+            # Build enhanced context header with section and page info
+            context_header = f"--- Document {i+1} ---"
+            context_header += f"\nSource: {source_file}"
+            context_header += f"\nSection: {section_title}"
+
+            # Add page information
+            if page_span:
+                context_header += f"\nPages: {page_span}"
+            elif page_number:
+                context_header += f"\nPage: {page_number}"
+
+            context_header += f"\nChunk: {chunk_index}"
 
             # Add content type indicators
             content_indicators = []
-
             if has_tables:
-                content_indicators.append(f"{num_tables} table(s)")
+                content_indicators.append("tables")
             if has_images:
-                content_indicators.append(f"{num_images} image(s)")
+                content_indicators.append("images")
 
             if content_indicators:
                 context_header += f"\n[Contains: {', '.join(content_indicators)}]"
 
             if ai_summarized:
-                context_header += "\n[AI-enhanced summary of multimodal content]"
+                context_header += "\n[AI-enhanced summary]"
 
             chunk_text = f"{context_header}\n\n{chunk.page_content}\n"
             chunk_length = len(chunk_text)
-
-            # Add the enhanced content
-            context_parts.append(f"{context_header}\n\n{chunk.page_content}\n")
 
             # Check if adding this chunk would exceed limit
             if current_length + chunk_length > settings.max_context_length:
@@ -166,10 +172,15 @@ def generate_final_answer(chunks: List, query: str) -> str:
                 )
                 break
 
+            # Add the enhanced content
+            context_parts.append(chunk_text)
+            current_length += chunk_length
+            chunks_used += 1
+
         # Combine all context
         full_context = "\n".join(context_parts)
 
-        # Build the text prompt
+        # Build the text prompt with enhanced citation instructions
         prompt_text = f"""Based on the following documents, please answer this question: {query}
 
 RETRIEVED DOCUMENTS:
@@ -177,10 +188,11 @@ RETRIEVED DOCUMENTS:
 
 INSTRUCTIONS:
 - Provide a clear, comprehensive answer using the information above
+- When citing information, include the source file, section name, and page number
+  Example: "According to the Employee Handbook (Benefits Section, Page 15)..."
 - If documents contain tables or images, their content has been analyzed and included
-- Cite specific sources by filename when referencing information
-- If information is insufficient, clearly state this and explain what's missing
 - Be specific and use concrete details from the documents
+- If information is insufficient, clearly state this and explain what's missing
 - If you find conflicting information, acknowledge it and explain the differences
 
 ANSWER:"""

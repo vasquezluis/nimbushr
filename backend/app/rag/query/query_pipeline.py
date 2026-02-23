@@ -5,9 +5,7 @@ Run this script to query from the vector database
 
 from dotenv import load_dotenv
 from app.settings import settings
-from .vector_store import load_vector_store
 from .query_engine import retrieve_chunks
-from .export_chunks import export_chunks_to_json
 from .query_engine import generate_final_answer
 from langchain_chroma import Chroma
 
