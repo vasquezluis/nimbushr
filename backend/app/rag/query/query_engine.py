@@ -4,9 +4,11 @@ Handles RAG queries, retrieval, and answer generation with enhanced metadata
 """
 
 from typing import List
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage
+
 from langchain_chroma import Chroma
+from langchain_core.messages import HumanMessage
+from langchain_openai import ChatOpenAI
+
 from app.settings import settings
 
 
@@ -49,12 +51,12 @@ def retrieve_chunks(vectorstore: Chroma, query: str) -> List:
     if hasattr(chunks[0], "metadata") and "score" in chunks[0].metadata:
         for i, chunk in enumerate(chunks):
             score = chunk.metadata.get("score", "N/A")
-            print(f"  Chunk {i+1} score: {score}")
+            print(f"  Chunk {i + 1} score: {score}")
 
     return chunks
 
 
-def rerank_chunks(chunks: List, query: str, top_n: int = None) -> List:
+def rerank_chunks(chunks: List, query: str, top_n: int = 3) -> List:
     """
     Rerank retrieved chunks using cross-encoder for better relevance.
 
@@ -91,7 +93,7 @@ def rerank_chunks(chunks: List, query: str, top_n: int = None) -> List:
 
         print(f"Reranked {len(reranked_chunks)} chunks")
         for i, idx in enumerate(ranked_indices[: len(reranked_chunks)]):
-            print(f"  Rank {i+1}: Score {scores[idx]:.4f}")
+            print(f"  Rank {i + 1}: Score {scores[idx]:.4f}")
 
         return reranked_chunks
 
@@ -118,7 +120,11 @@ def generate_final_answer(chunks: List, query: str) -> str:
     """
     try:
         # Initialize LLM (needs vision model for images)
-        llm = ChatOpenAI(model=settings.llm_model, temperature=settings.llm_temperature)
+        llm = ChatOpenAI(
+            model=settings.llm_model,
+            temperature=settings.llm_temperature,
+            max_completion_tokens=settings.llm_max_tokens,
+        )
 
         # Build context with length management
         context_parts = []
@@ -126,53 +132,63 @@ def generate_final_answer(chunks: List, query: str) -> str:
         chunks_used = 0
 
         for i, chunk in enumerate(chunks):
-            # Extract metadata
-            source_file = chunk.metadata.get("source_file", "Unknown")
-            chunk_index = chunk.metadata.get("chunk_index", "?")
-            section_title = chunk.metadata.get("section_title", "Unknown Section")
-            page_number = chunk.metadata.get("page_number")
-            page_span = chunk.metadata.get("page_span")
-            ai_summarized = chunk.metadata.get("ai_summarized", False)
-            has_tables = chunk.metadata.get("has_tables", False)
-            has_images = chunk.metadata.get("has_images", False)
+            metadata = chunk.metadata
+            source_file = metadata.get("source_file", "Unknown")
+            source_type = metadata.get("source_type", "pdf")
+            chunk_index = metadata.get("chunk_index", "?")
+            section_title = metadata.get("section_title", "Unknown Section")
+            ai_summarized = metadata.get("ai_summarized", False)
+            has_tables = metadata.get("has_tables", False)
+            has_images = metadata.get("has_images", False)
 
-            # Build enhanced context header with section and page info
-            context_header = f"--- Document {i+1} ---"
+            context_header = f"--- Document {i + 1} ---"
             context_header += f"\nSource: {source_file}"
-            context_header += f"\nSection: {section_title}"
 
-            # Add page information
-            if page_span:
-                context_header += f"\nPages: {page_span}"
-            elif page_number:
-                context_header += f"\nPage: {page_number}"
+            if source_type == "excel":
+                sheet_name = metadata.get("sheet_name", section_title)
+                row_start = metadata.get("row_start")
+                row_end = metadata.get("row_end")
+                total_rows = metadata.get("total_rows")
+
+                context_header += f"\nSheet: {sheet_name}"
+                if row_start and row_end:
+                    context_header += f"\nRows: {row_start}–{row_end}"
+                if total_rows:
+                    context_header += f" (of {total_rows} total)"
+                context_header += (
+                    "\n[Tabular data — treat values as structured records]"
+                )
+            else:
+                page_number = metadata.get("page_number")
+                page_span = metadata.get("page_span")
+
+                context_header += f"\nSection: {section_title}"
+                if page_span:
+                    context_header += f"\nPages: {page_span}"
+                elif page_number:
+                    context_header += f"\nPage: {page_number}"
+
+                content_indicators = []
+                if has_tables:
+                    content_indicators.append("tables")
+                if has_images:
+                    content_indicators.append("images")
+                if content_indicators:
+                    context_header += f"\n[Contains: {', '.join(content_indicators)}]"
+                if ai_summarized:
+                    context_header += "\n[AI-enhanced summary]"
 
             context_header += f"\nChunk: {chunk_index}"
-
-            # Add content type indicators
-            content_indicators = []
-            if has_tables:
-                content_indicators.append("tables")
-            if has_images:
-                content_indicators.append("images")
-
-            if content_indicators:
-                context_header += f"\n[Contains: {', '.join(content_indicators)}]"
-
-            if ai_summarized:
-                context_header += "\n[AI-enhanced summary]"
 
             chunk_text = f"{context_header}\n\n{chunk.page_content}\n"
             chunk_length = len(chunk_text)
 
-            # Check if adding this chunk would exceed limit
             if current_length + chunk_length > settings.max_context_length:
                 print(
-                    f"Context limit reached at chunk {i+1}, using {chunks_used} chunks"
+                    f"Context limit reached at chunk {i + 1}, using {chunks_used} chunks"
                 )
                 break
 
-            # Add the enhanced content
             context_parts.append(chunk_text)
             current_length += chunk_length
             chunks_used += 1
@@ -187,13 +203,17 @@ RETRIEVED DOCUMENTS:
 {full_context}
 
 INSTRUCTIONS:
-- Provide a clear, comprehensive answer using the information above
-- When citing information, include the source file, section name, and page number
-  Example: "According to the Employee Handbook (Benefits Section, Page 15)..."
-- If documents contain tables or images, their content has been analyzed and included
-- Be specific and use concrete details from the documents
-- If information is insufficient, clearly state this and explain what's missing
-- If you find conflicting information, acknowledge it and explain the differences
+- Provide a clear, comprehensive answer using the information above.
+- Adapt your citation style to the source type:
+    • PDF:   "According to [filename] ([Section], Page [N])…"
+    • Excel: "According to [filename] (Sheet: [sheet], rows [X]–[Y])…"
+- For Excel/tabular data: reference specific column values, highlight patterns,
+  summarise aggregates, or compare rows as appropriate to the question.
+- For PDF content: use section names and page numbers to anchor your answer.
+- If documents contain tables or images whose content has been AI-analysed, use that analysis.
+- Be specific — use concrete values and details from the documents.
+- If information is insufficient, clearly state what is missing.
+- If sources conflict, acknowledge the discrepancy and explain both sides.
 
 ANSWER:"""
 

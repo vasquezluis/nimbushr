@@ -5,6 +5,7 @@ Centralized configuration using Pydantic Settings
 
 import os
 from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +23,7 @@ class Settings(BaseSettings):
     # Use absolute path from settings file location
     project_root: Path = Path(__file__).parent.parent.parent
     data_dir: Path = project_root / "backend" / "data" / "pdfs"
+    excel_data_dir: Path = project_root / "backend" / "data" / "excels"
 
     vector_db_dir: str = "chroma_db"
 
@@ -35,6 +37,7 @@ class Settings(BaseSettings):
     # ======================
     llm_model: str = "gpt-4o"
     llm_temperature: float = 0
+    llm_max_tokens: int = 2048  # 4096
 
     # ======================
     # PDF Processing Config
@@ -42,6 +45,11 @@ class Settings(BaseSettings):
     pdf_strategy: str = "hi_res"  # Options: "fast", "hi_res", "ocr_only"
     infer_table_structure: bool = True
     extract_images: bool = True
+
+    # ======================
+    # Excel Processing Config
+    # ======================
+    excel_chunk_rows: int = 50
 
     # ======================
     # Chunking Config
@@ -59,11 +67,12 @@ class Settings(BaseSettings):
     # ======================
     # Retriever Config
     # ======================
-    top_k_chunks: int = 5
+    top_k_chunks: int = 3
     use_mmr: bool = True
     max_context_length: int = 12000
     use_reranking: bool = True
     mmr_lambda: float = 0.5
+    cross_encoder_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
     # Only use AI summarization for chunks with this many tables or more
     ai_summary_min_tables: int = 2
