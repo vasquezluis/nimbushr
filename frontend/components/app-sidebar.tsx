@@ -1,15 +1,22 @@
 "use client";
 
-import * as React from "react";
-import {
-  Plus,
-  MessageSquare,
-  Trash2,
-  Clock,
-  Bot,
-  MoreHorizontal,
-} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import {
+  Bot,
+  Clock,
+  MessageSquare,
+  MoreHorizontal,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import {
   Sidebar,
@@ -20,17 +27,10 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuAction,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface Conversation {
   id: string;
@@ -40,7 +40,7 @@ interface Conversation {
 }
 
 export function AppSidebar() {
-  const [conversations, setConversations] = React.useState<Conversation[]>([
+  const [conversations, setConversations] = useState<Conversation[]>([
     {
       id: "1",
       title: "Employee Benefits Overview",
@@ -73,7 +73,7 @@ export function AppSidebar() {
     },
   ]);
 
-  const [activeId, setActiveId] = React.useState("1");
+  const [activeId, setActiveId] = useState("1");
 
   const handleNewChat = () => {
     const newId = (conversations.length + 1).toString();

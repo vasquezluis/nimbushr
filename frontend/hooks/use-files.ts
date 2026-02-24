@@ -1,6 +1,6 @@
-import { useQuery, UseQueryResult } from "@tanstack/react-query";
+import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { filesApi } from "@/api/files";
-import { FilesListResponse, FileChunksResponse } from "@/types/files";
+import type { FileChunksResponse, FilesListResponse } from "@/types/files";
 
 /**
  * Query keys for files
@@ -34,7 +34,7 @@ export function useFileChunks(
 ): UseQueryResult<FileChunksResponse, Error> {
   return useQuery({
     queryKey: filesKeys.chunks(filename || ""),
-    queryFn: () => filesApi.getFileChunks(filename!),
+    queryFn: () => filesApi.getFileChunks(filename as string),
     enabled: !!filename,
     staleTime: 10 * 60 * 1000, // Consider data fresh for 10 minutes
     retry: 2,

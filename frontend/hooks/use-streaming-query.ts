@@ -1,8 +1,7 @@
-import { useRef, useState, useCallback } from "react";
-import { streamQuery } from "@/api/query";
-import { Source, UseStreamingQueryResult } from "@/types/query";
-
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
+import { streamQuery } from "@/api/query";
+import type { Source, UseStreamingQueryResult } from "@/types/query";
 
 export function useStreamingQuery(): UseStreamingQueryResult {
   const [isStreaming, setIsStreaming] = useState(false);
@@ -63,6 +62,7 @@ export function useStreamingQuery(): UseStreamingQueryResult {
             break;
         }
       }
+      // biome-ignore lint/suspicious/noExplicitAny: Handle error with types
     } catch (err: any) {
       if (err.name === "AbortError") {
         console.log("Stream cancelled by user");

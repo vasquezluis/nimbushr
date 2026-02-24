@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import { QueryResponse, StreamEvent } from "@/types/query";
+import type { QueryResponse, StreamEvent } from "@/types/query";
 
 export class RateLimitError extends Error {
   retryAfter: number; // seconds
@@ -42,7 +42,10 @@ export async function* streamQuery(
 
   if (!response.ok) {
     if (response.status === 429) {
-      const retryAfter = parseInt(response.headers.get("Retry-After") || "60");
+      const retryAfter = parseInt(
+        response.headers.get("Retry-After") || "60",
+        10,
+      );
       throw new RateLimitError(retryAfter);
     }
     throw new Error(`HTTP error! status: ${response.status}`);

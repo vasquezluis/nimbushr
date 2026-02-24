@@ -1,9 +1,9 @@
 "use client";
 
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageBubble } from "@/components/message-bubble";
 import { Loader2 } from "lucide-react";
-import { MessageListProps } from "@/types/chat";
+import { MessageBubble } from "@/components/message-bubble";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { MessageListProps } from "@/types/chat";
 
 export function MessageList({
   messages,

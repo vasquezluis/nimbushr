@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { MessageList } from "@/components/message-list";
+import { useEffect, useRef, useState } from "react";
 import { ChatInput } from "@/components/chat-input";
+import { MessageList } from "@/components/message-list";
 import { useStreamingQuery } from "@/hooks/use-streaming-query";
-import { Message } from "@/types/chat";
+import type { Message } from "@/types/chat";
 
 export function ChatArea() {
   const [messages, setMessages] = useState<Message[]>([
@@ -30,13 +30,9 @@ export function ChatArea() {
     rateLimitedUntil,
   } = useStreamingQuery();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, streamingAnswer]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
   // Update streaming message in real-time
   useEffect(() => {

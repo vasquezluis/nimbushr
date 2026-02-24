@@ -1,16 +1,13 @@
-from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 import json
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from app.api.deps import get_db
+from app.limiter import limiter
 from app.rag.query.query_pipeline import run_query
 from app.rag.query.streaming_query_pipeline import run_streaming_query
-
-from app.limiter import limiter
-
 
 router = APIRouter(tags=["RAG"])
 

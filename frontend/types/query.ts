@@ -19,6 +19,7 @@ export interface QueryResponse {
 
 export interface StreamEvent {
   type: "status" | "sources" | "token" | "done" | "error";
+  // biome-ignore lint/suspicious/noExplicitAny: TODO: type data com from backend
   data: any;
   num_chunks?: number;
 }

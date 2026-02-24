@@ -1,11 +1,12 @@
+import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+
 const inter = Inter({ subsets: ["latin"] });
-import "./globals.css";
 
 import { Toaster } from "sonner";
-import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: "RAG Assistant - AI Document Chat",

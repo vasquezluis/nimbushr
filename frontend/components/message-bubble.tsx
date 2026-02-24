@@ -1,12 +1,12 @@
 "use client";
 
 import { format } from "date-fns";
-import { User, Bot, FileText, Table, Image, Sparkles } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Bot, FileText, Image, Sparkles, Table, User } from "lucide-react";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { MessageBubbleProps } from "@/types/chat";
+import { Badge } from "@/components/ui/badge";
+import type { MessageBubbleProps } from "@/types/chat";
 
-export function MessageBubble({ message, isLatest }: MessageBubbleProps) {
+export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
   return (
@@ -79,6 +79,7 @@ export function MessageBubble({ message, isLatest }: MessageBubbleProps) {
             <div className="space-y-1.5">
               {message.sources.map((source, idx) => (
                 <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: Change this when save messages to database
                   key={idx}
                   className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/8 hover:border-white/15 transition-all duration-200 group/source"
                 >

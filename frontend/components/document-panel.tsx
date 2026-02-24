@@ -1,22 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import {
-  FileText,
-  X,
-  ChevronRight,
-  ChevronLeft,
-  FileIcon,
-  Loader2,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  FileIcon,
+  FileText,
+  Loader2,
   RefreshCw,
+  X,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useFiles, useFileUrl } from "@/hooks/use-files";
-import { FileInfo } from "@/types/files";
+import { useState } from "react";
 import { PDFViewer } from "@/components/pdf-viewer";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useFiles, useFileUrl } from "@/hooks/use-files";
+import type { FileInfo } from "@/types/files";
 
 interface DocumentPanelProps {
   selectedDocument: string | null;
@@ -171,6 +171,7 @@ export function DocumentPanel({
                 return (
                   <button
                     key={file.filename}
+                    type="button"
                     onClick={() => onSelectDocument(file.filename)}
                     className="w-full text-left p-3 rounded-xl cursor-pointer bg-white/5 border border-white/10 hover:bg-white/8 hover:border-white/15 transition-all duration-200 group"
                   >

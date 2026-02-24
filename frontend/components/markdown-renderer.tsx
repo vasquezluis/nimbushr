@@ -1,7 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
-import { MarkdownRendererProps } from "@/types/chat";
+import type { MarkdownRendererProps } from "@/types/chat";
 
 export function MarkdownRenderer({
   content,
@@ -64,6 +64,7 @@ export function MarkdownRenderer({
           ),
 
           // Code blocks
+          // biome-ignore lint/suspicious/noExplicitAny: Change type to anything else someday
           code: ({ node, inline, className, children, ...props }: any) => {
             if (inline) {
               return (

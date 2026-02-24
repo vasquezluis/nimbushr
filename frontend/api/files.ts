@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
-import { FilesListResponse, FileChunksResponse } from "@/types/files";
+
+import type { FileChunksResponse, FilesListResponse } from "@/types/files";
 
 /**
  * Files API Service

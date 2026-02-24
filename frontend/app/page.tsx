@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { ChatArea } from "@/components/chat-area";
 import { DocumentPanel } from "@/components/document-panel";
-import { useState } from "react";
 
 export default function Home() {
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null);

@@ -1,16 +1,16 @@
 "use client";
 
+import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ZoomIn,
-  ZoomOut,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -22,7 +22,7 @@ interface PDFViewerProps {
   filename: string;
 }
 
-export function PDFViewer({ fileUrl, filename }: PDFViewerProps) {
+export function PDFViewer({ fileUrl }: PDFViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);

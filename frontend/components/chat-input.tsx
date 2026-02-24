@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Send, Square } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Square } from "lucide-react";
-import { ChatInputProps } from "@/types/chat";
+import type { ChatInputProps } from "@/types/chat";
 
 export function ChatInput({
   onSendMessage,
@@ -57,7 +56,7 @@ export function ChatInput({
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
     }
-  }, [input]);
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto w-full px-6 py-6">
