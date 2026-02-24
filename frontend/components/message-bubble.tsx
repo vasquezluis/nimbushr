@@ -1,7 +1,15 @@
 "use client";
 
 import { format } from "date-fns";
-import { Bot, FileText, Image, Sparkles, Table, User } from "lucide-react";
+import {
+  AlertCircle,
+  Bot,
+  FileText,
+  Image,
+  Sparkles,
+  Table,
+  User,
+} from "lucide-react";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Badge } from "@/components/ui/badge";
 import type { MessageBubbleProps } from "@/types/chat";
@@ -55,7 +63,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               <MarkdownRenderer content={message.content} />
             </div>
           )}
-
           {/* Streaming Indicator */}
           {message.isStreaming && (
             <div className="mt-2 flex items-center gap-1">
@@ -68,6 +75,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 className="w-1.5 h-1.5 bg-white/40 rounded-full animate-pulse"
                 style={{ animationDelay: "0.4s" }}
               />
+            </div>
+          )}
+          {!message.isStreaming && message.isTruncated && (
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-400/80">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                Response was cut off — try asking a more specific question.
+              </span>
             </div>
           )}
         </div>

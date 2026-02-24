@@ -245,22 +245,20 @@ ANSWER:"""
 
         # Stream tokens from the LLM
         finish_reason = None
+        full_response_metadata = {}
 
         async for chunk in llm.astream([message]):
             if chunk.content:
                 yield {"type": "token", "data": chunk.content}
-            # Capture finish_reason from response metadata
+            # response_metadata may arrive on ANY chunk, not just the last
             if hasattr(chunk, "response_metadata") and chunk.response_metadata:
-                finish_reason = chunk.response_metadata.get("finish_reason")
+                full_response_metadata.update(chunk.response_metadata)
 
-        # Signal completion — warn frontend if truncated
-        if finish_reason == "length":
-            yield {
-                "type": "token",
-                "data": "\n\n⚠️ *Response was truncated due to length limits.*",
-            }
+        finish_reason = full_response_metadata.get("finish_reason")
 
-        yield {"type": "done", "data": None}
+        truncated = finish_reason == "length"
+
+        yield {"type": "done", "data": None, "truncated": truncated}
 
     except Exception as e:
         print(f"Streaming failed: {e}")

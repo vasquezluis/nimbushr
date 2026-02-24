@@ -11,6 +11,7 @@ export function useStreamingQuery(): UseStreamingQueryResult {
   const [status, setStatus] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
 
   const cancel = useCallback(() => {
     if (abortControllerRef.current) {
@@ -28,6 +29,7 @@ export function useStreamingQuery(): UseStreamingQueryResult {
     setStreamingAnswer("");
     setSources([]);
     setStatus("Starting...");
+    setIsTruncated(false);
 
     // Create new abort controller
     abortControllerRef.current = new AbortController();
@@ -51,6 +53,7 @@ export function useStreamingQuery(): UseStreamingQueryResult {
             break;
 
           case "done":
+            setIsTruncated(event.truncated ?? false);
             setIsStreaming(false);
             setStatus(null);
             break;
@@ -96,5 +99,6 @@ export function useStreamingQuery(): UseStreamingQueryResult {
     sources,
     status,
     rateLimitedUntil,
+    isTruncated,
   };
 }

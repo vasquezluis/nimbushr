@@ -28,6 +28,7 @@ export function ChatArea() {
     sources,
     status,
     rateLimitedUntil,
+    isTruncated,
   } = useStreamingQuery();
 
   useEffect(() => {
@@ -86,6 +87,24 @@ export function ChatArea() {
       });
     }
   }, [isStreaming, streamingAnswer]);
+
+  useEffect(() => {
+    if (isTruncated) {
+      setMessages((prev) => {
+        const lastMessage = prev[prev.length - 1];
+        if (lastMessage?.role === "assistant") {
+          return [
+            ...prev.slice(0, -1),
+            {
+              ...lastMessage,
+              isTruncated: true,
+            },
+          ];
+        }
+        return prev;
+      });
+    }
+  }, [isTruncated]);
 
   // Handle errors
   useEffect(() => {

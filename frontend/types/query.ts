@@ -22,6 +22,7 @@ export interface StreamEvent {
   // biome-ignore lint/suspicious/noExplicitAny: TODO: type data com from backend
   data: any;
   num_chunks?: number;
+  truncated?: boolean;
 }
 
 export interface UseStreamingQueryResult {
@@ -33,4 +34,5 @@ export interface UseStreamingQueryResult {
   sources: Source[];
   status: string | null;
   rateLimitedUntil: number | null;
+  isTruncated: boolean;
 }

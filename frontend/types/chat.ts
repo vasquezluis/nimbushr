@@ -11,6 +11,7 @@ export interface Message {
     ai_summarized: boolean;
   }>;
   isStreaming?: boolean;
+  isTruncated?: boolean;
 }
 
 export interface MessageListProps {

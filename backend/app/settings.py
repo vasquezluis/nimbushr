@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     # ======================
     llm_model: str = "gpt-4o"
     llm_temperature: float = 0
-    llm_max_tokens: int = 4096
+    llm_max_tokens: int = 8192
 
     # ======================
     # PDF Processing Config
@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     # ======================
     top_k_chunks: int = 3
     use_mmr: bool = True
-    max_context_length: int = 12000
+    max_context_length: int = 8000
     use_reranking: bool = True
     mmr_lambda: float = 0.5
     cross_encoder_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
