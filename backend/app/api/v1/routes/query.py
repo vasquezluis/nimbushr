@@ -3,9 +3,13 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import json
 
+from fastapi import APIRouter, Depends, Request
+
 from app.api.deps import get_db
 from app.rag.query.query_pipeline import run_query
 from app.rag.query.streaming_query_pipeline import run_streaming_query
+
+from app.limiter import limiter
 
 
 router = APIRouter(tags=["RAG"])
@@ -23,16 +27,20 @@ class QueryResponse(BaseModel):
 
 
 @router.post("/query", response_model=QueryResponse)
+@limiter.limit("5/minute")
 async def query_rag(
-    request: QueryRequest,
+    request: Request,
+    query_request: QueryRequest,
     db=Depends(get_db),
 ):
-    return run_query(request.query, db)
+    return run_query(query_request.query, db)
 
 
 @router.post("/query/stream")
+@limiter.limit("5/minute")
 async def query_rag_stream(
-    request: QueryRequest,
+    request: Request,
+    query_request: QueryRequest,
     db=Depends(get_db),
 ):
     """
@@ -50,7 +58,7 @@ async def query_rag_stream(
     async def event_generator():
         """Generate Server-Sent Events from the streaming pipeline."""
         try:
-            async for event in run_streaming_query(request.query, db):
+            async for event in run_streaming_query(query_request.query, db):
                 # Format as SSE: data: {json}\n\n
                 yield f"data: {json.dumps(event)}\n\n"
 

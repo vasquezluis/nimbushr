@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Square } from "lucide-react";
@@ -10,9 +11,12 @@ export function ChatInput({
   onSendMessage,
   isLoading,
   onCancel,
+  rateLimitedUntil,
 }: ChatInputProps) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [secondsLeft, setSecondsLeft] = useState<number>(0);
+  const isRateLimited = !!rateLimitedUntil && rateLimitedUntil > Date.now();
 
   const handleSubmit = () => {
     if (!input.trim() || isLoading) return;
@@ -33,6 +37,20 @@ export function ChatInput({
     }
   };
 
+  // Coutdown ticker
+  useEffect(() => {
+    if (!rateLimitedUntil) return;
+
+    const tick = () => {
+      const remaining = Math.ceil((rateLimitedUntil - Date.now()) / 1000);
+      setSecondsLeft(Math.max(0, remaining));
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [rateLimitedUntil]);
+
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
@@ -52,7 +70,6 @@ export function ChatInput({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask about your documents..."
-            disabled={isLoading}
             className="
               min-h-14 max-h-50 resize-none
               bg-white/5 border-white/10 
@@ -64,6 +81,7 @@ export function ChatInput({
               focus-visible:ring-0 focus-visible:ring-offset-0
             "
             rows={1}
+            disabled={isLoading || isRateLimited}
           />
 
           {/* Character Count */}
@@ -108,17 +126,28 @@ export function ChatInput({
 
       {/* Helper Text */}
       <div className="mt-3 flex items-center justify-between px-1">
-        <p className="text-xs text-white/30">
-          Press{" "}
-          <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/40 font-mono">
-            Enter
-          </kbd>{" "}
-          to send,{" "}
-          <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/40 font-mono">
-            Shift + Enter
-          </kbd>{" "}
-          for new line
-        </p>
+        {isRateLimited ? (
+          <div className="flex items-center gap-2 text-xs text-amber-400/80">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              Rate limit reached — try again in{" "}
+              <span className="font-mono font-semibold">{secondsLeft}s</span>
+            </span>
+          </div>
+        ) : (
+          <p className="text-xs text-white/30">
+            Press
+            <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/40 font-mono">
+              Enter
+            </kbd>
+            to send,
+            <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/40 font-mono">
+              Shift + Enter
+            </kbd>
+            for new line
+          </p>
+        )}
+        <span className="text-xs text-white/20 font-mono">{input.length}</span>
       </div>
     </div>
   );

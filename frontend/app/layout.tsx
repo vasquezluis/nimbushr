@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+const inter = Inter({ subsets: ["latin"] });
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 
@@ -27,6 +28,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             {children}
+            <Toaster position="top-center" theme="dark" richColors />
           </ThemeProvider>
         </QueryProvider>
       </body>

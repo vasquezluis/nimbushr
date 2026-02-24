@@ -3,6 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from app.limiter import limiter
+
 from app.rag.query.vector_store import load_vector_store
 from app.api.v1.routes import query, files
 
@@ -22,9 +26,13 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(
         title="RAG API",
-        version="1.0.1",
+        version="1.0.2",
         lifespan=lifespan,
     )
+
+    # Rate limiter state and error handler
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     # Configure CORS
     app.add_middleware(

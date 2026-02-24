@@ -2,14 +2,16 @@ import { useRef, useState, useCallback } from "react";
 import { streamQuery } from "@/api/query";
 import { Source, UseStreamingQueryResult } from "@/types/query";
 
+import { toast } from "sonner";
+
 export function useStreamingQuery(): UseStreamingQueryResult {
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [streamingAnswer, setStreamingAnswer] = useState("");
   const [sources, setSources] = useState<Source[]>([]);
   const [status, setStatus] = useState<string | null>(null);
-
   const abortControllerRef = useRef<AbortController | null>(null);
+  const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
 
   const cancel = useCallback(() => {
     if (abortControllerRef.current) {
@@ -64,8 +66,18 @@ export function useStreamingQuery(): UseStreamingQueryResult {
     } catch (err: any) {
       if (err.name === "AbortError") {
         console.log("Stream cancelled by user");
+      } else if (err.name === "RateLimitError") {
+        const unlockAt = Date.now() + err.retryAfter * 1000;
+        setRateLimitedUntil(unlockAt);
+
+        toast.error("Rate limit reached", {
+          description: `You can send 5 messages per minute. Try again in ${err.retryAfter}s.`,
+          duration: err.retryAfter * 1000,
+        });
+
+        // Auto-clear once the window expires
+        setTimeout(() => setRateLimitedUntil(null), err.retryAfter * 1000);
       } else {
-        console.error("Streaming error:", err);
         setError(err.message || "An error occurred during streaming");
       }
       setIsStreaming(false);
@@ -83,5 +95,6 @@ export function useStreamingQuery(): UseStreamingQueryResult {
     streamingAnswer,
     sources,
     status,
+    rateLimitedUntil,
   };
 }

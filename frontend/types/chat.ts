@@ -29,6 +29,7 @@ export interface ChatInputProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
   onCancel?: () => void;
+  rateLimitedUntil?: number | null;
 }
 
 export interface MarkdownRendererProps {

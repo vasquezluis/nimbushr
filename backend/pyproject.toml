@@ -18,4 +18,5 @@ dependencies = [
     "unstructured[pdf]>=0.18.31",
     "uvicorn>=0.40.0",
     "aiohttp>=3.9.0",
+    "slowapi>=0.1.9",
 ]

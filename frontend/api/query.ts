@@ -1,6 +1,16 @@
 import { api } from "@/lib/api";
 import { QueryResponse, StreamEvent } from "@/types/query";
 
+export class RateLimitError extends Error {
+  retryAfter: number; // seconds
+
+  constructor(retryAfter: number) {
+    super(`Rate limit exceeded. Try again in ${retryAfter}s.`);
+    this.name = "RateLimitError";
+    this.retryAfter = retryAfter;
+  }
+}
+
 /**
  * Non-streaming query endpoint (fallback)
  */
@@ -31,6 +41,10 @@ export async function* streamQuery(
   });
 
   if (!response.ok) {
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get("Retry-After") || "60");
+      throw new RateLimitError(retryAfter);
+    }
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 

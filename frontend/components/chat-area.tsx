@@ -27,6 +27,7 @@ export function ChatArea() {
     streamingAnswer,
     sources,
     status,
+    rateLimitedUntil,
   } = useStreamingQuery();
 
   const scrollToBottom = () => {
@@ -142,6 +143,7 @@ export function ChatArea() {
           onSendMessage={handleSendMessage}
           isLoading={isStreaming}
           onCancel={handleCancelStreaming}
+          rateLimitedUntil={rateLimitedUntil}
         />
       </div>
     </div>

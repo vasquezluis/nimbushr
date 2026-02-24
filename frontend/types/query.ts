@@ -31,4 +31,5 @@ export interface UseStreamingQueryResult {
   streamingAnswer: string;
   sources: Source[];
   status: string | null;
+  rateLimitedUntil: number | null;
 }
