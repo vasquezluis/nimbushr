@@ -22,8 +22,9 @@ class Settings(BaseSettings):
     # ======================
     # Use absolute path from settings file location
     project_root: Path = Path(__file__).parent.parent.parent
-    data_dir: Path = project_root / "backend" / "data" / "pdfs"
+    pdf_data_dir: Path = project_root / "backend" / "data" / "pdfs"
     excel_data_dir: Path = project_root / "backend" / "data" / "excels"
+    text_data_dir: Path = project_root / "backend" / "data" / "texts"
 
     vector_db_dir: str = "chroma_db"
 
@@ -96,14 +97,23 @@ class Settings(BaseSettings):
 
     def validate_paths(self):
         """Validate that required directories exist."""
-        if not self.data_dir.exists():
+        if (
+            not self.pdf_data_dir.exists()
+            and not self.excel_data_dir
+            and not self.text_data_dir
+        ):
             raise FileNotFoundError(
-                f"PDF directory not found: {self.data_dir}\n"
-                f"Please create it and add PDF files."
+                f"PDF directory not found: {self.pdf_data_dir}\n"
+                f"PDF directory not found: {self.excel_data_dir}\n"
+                f"PDF directory not found: {self.text_data_dir}\n"
+                f"Please create them"
             )
 
-        # Create vector DB directory if it doesn't exist
+        # Create directories if it doesn't exist
         os.makedirs(self.vector_db_dir, exist_ok=True)
+        os.makedirs(self.pdf_data_dir, exist_ok=True)
+        os.makedirs(self.excel_data_dir, exist_ok=True)
+        os.makedirs(self.text_data_dir, exist_ok=True)
 
     def get_chunk_config(self) -> dict:
         """Get chunking configuration as a dictionary."""
@@ -146,7 +156,9 @@ class Settings(BaseSettings):
         print("\n" + "=" * 60)
         print("CONFIGURATION")
         print("=" * 60)
-        print(f"Data Directory: {self.data_dir}")
+        print(f"PDF data Directory: {self.pdf_data_dir}")
+        print(f"Excel data Directory: {self.excel_data_dir}")
+        print(f"Text data Directory: {self.text_data_dir}")
         print(f"Vector DB Directory: {self.vector_db_dir}")
         print(f"Embedding Model: {self.embedding_model}")
         print(f"LLM Model: {self.llm_model}")

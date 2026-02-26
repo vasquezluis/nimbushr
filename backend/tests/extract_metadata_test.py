@@ -3,16 +3,17 @@ Test Metadata Extraction
 Run this to verify that unstructured is providing page numbers and section titles
 """
 
-from app.settings import settings
-from unstructured.partition.pdf import partition_pdf
 from unstructured.chunking.title import chunk_by_title
+from unstructured.partition.pdf import partition_pdf
+
+from app.settings import settings
 
 
 def test_metadata_extraction():
     """Test what metadata unstructured provides for your PDFs."""
 
     # Adjust this path to your PDF directory
-    pdf_directory = settings.data_dir
+    pdf_directory = settings.pdf_data_dir
 
     # Get first PDF for testing
     pdf_files = list(pdf_directory.glob("*.pdf"))
@@ -42,7 +43,7 @@ def test_metadata_extraction():
     print("-" * 70)
 
     for i, element in enumerate(elements[:10]):
-        print(f"\nElement {i+1}:")
+        print(f"\nElement {i + 1}:")
         print(f"  Type: {element.category}")
         print(
             f"  Text: {element.text[:100]}..."
@@ -79,7 +80,7 @@ def test_metadata_extraction():
     print("-" * 70)
 
     for i, chunk in enumerate(chunks[:3]):
-        print(f"\nChunk {i+1}:")
+        print(f"\nChunk {i + 1}:")
         print(f"  Text: {chunk.text[:150]}...")
 
         # Check for page number in chunk
@@ -133,10 +134,10 @@ def test_metadata_extraction():
     title_elements = sum(1 for e in elements if e.category == "Title")
 
     print(
-        f"Elements with page numbers: {elements_with_pages}/{len(elements)} ({elements_with_pages/len(elements)*100:.1f}%)"
+        f"Elements with page numbers: {elements_with_pages}/{len(elements)} ({elements_with_pages / len(elements) * 100:.1f}%)"
     )
     print(
-        f"Title elements: {title_elements}/{len(elements)} ({title_elements/len(elements)*100:.1f}%)"
+        f"Title elements: {title_elements}/{len(elements)} ({title_elements / len(elements) * 100:.1f}%)"
     )
 
     if elements_with_pages > 0:

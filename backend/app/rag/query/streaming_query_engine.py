@@ -108,7 +108,7 @@ def build_context_from_chunks(chunks: List) -> tuple[str, List[Dict[str, Any]]]:
     for i, chunk in enumerate(chunks):
         metadata = chunk.metadata
         source_file = metadata.get("source_file", "Unknown")
-        source_type = metadata.get("source_type", "pdf")  # "pdf" | "excel"
+        source_type = metadata.get("source_type", "pdf")
         chunk_index = metadata.get("chunk_index", "?")
         section_title = metadata.get("section_title", "Unknown Section")
         ai_summarized = metadata.get("ai_summarized", False)
@@ -117,9 +117,9 @@ def build_context_from_chunks(chunks: List) -> tuple[str, List[Dict[str, Any]]]:
 
         context_header = f"--- Document {i + 1} ---"
         context_header += f"\nSource: {source_file}"
+        context_header += f"\nSource: {source_file}"
 
         if source_type == "excel":
-            # Excel: sheet-aware location info
             sheet_name = metadata.get("sheet_name", section_title)
             row_start = metadata.get("row_start")
             row_end = metadata.get("row_end")
@@ -131,8 +131,8 @@ def build_context_from_chunks(chunks: List) -> tuple[str, List[Dict[str, Any]]]:
             if total_rows:
                 context_header += f" (of {total_rows} total)"
             context_header += "\n[Tabular data — treat values as structured records]"
-        else:
-            # PDF: page/section location info
+
+        elif source_type == "pdf":
             page_number = metadata.get("page_number")
             page_span = metadata.get("page_span")
 
@@ -151,6 +151,14 @@ def build_context_from_chunks(chunks: List) -> tuple[str, List[Dict[str, Any]]]:
                 context_header += f"\n[Contains: {', '.join(content_indicators)}]"
             if ai_summarized:
                 context_header += "\n[AI-enhanced summary]"
+
+        else:
+            # "text" | "markdown"
+            page_number = metadata.get("page_number")
+            context_header += f"\nSection: {section_title}"
+            if page_number:
+                label = "Paragraph" if source_type == "text" else "Section index"
+                context_header += f"\n{label}: {page_number}"
 
         context_header += f"\nChunk: {chunk_index}"
 

@@ -3,9 +3,11 @@ PDF Loader Module
 Handles loading and parsing PDF documents
 """
 
-from app.settings import settings
-from typing import List, Dict
+from typing import Dict, List
+
 from unstructured.partition.pdf import partition_pdf
+
+from app.settings import settings
 
 
 def load_pdfs_from_directory() -> Dict[str, List]:
@@ -16,7 +18,7 @@ def load_pdfs_from_directory() -> Dict[str, List]:
         Dictionary mapping PDF filenames to their extracted elements
     """
 
-    pdf_directory = settings.data_dir
+    pdf_directory = settings.pdf_data_dir
 
     # Get all PDF files
     pdf_files = list(pdf_directory.glob("*.pdf"))

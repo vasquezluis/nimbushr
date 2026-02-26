@@ -3,14 +3,14 @@ Files API Route
 Returns list of files loaded into the vector store and serves PDF files
 """
 
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import List
 
 from app.api.deps import get_db
 from app.settings import settings
-
 
 router = APIRouter(tags=["Files"])
 
@@ -116,7 +116,7 @@ async def get_file(filename: str):
             raise HTTPException(status_code=400, detail="Invalid filename")
 
         # Construct file path
-        file_path = settings.data_dir / filename
+        file_path = settings.pdf_data_dir / filename
 
         # Verify file exists and is a PDF
         if not file_path.exists():

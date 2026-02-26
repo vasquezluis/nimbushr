@@ -10,9 +10,11 @@ from langchain_core.documents import Document
 from app.rag.ingest.ai_summarizer import summarise_chunks
 from app.rag.ingest.document_processor import create_chunks_by_title
 from app.rag.ingest.excel_document_processor import create_excel_documents
+from app.rag.ingest.text_document_processor import create_text_documents
 from app.rag.ingest.vector_store import create_vector_store
 from app.rag.loaders.excel_loader import load_excel_files_from_directory
 from app.rag.loaders.pdf_loader import load_pdfs_from_directory
+from app.rag.loaders.text_loader import load_text_files_from_directory
 from app.settings import settings
 
 
@@ -66,6 +68,16 @@ def run_complete_ingestion_pipeline() -> object:
             all_documents.extend(docs)
     else:
         print("No Excel/CSV files found — skipping Excel ingestion.")
+
+    # ── Text / Markdown ───────────────────────────────────────────────────────
+    text_files = load_text_files_from_directory(settings.text_data_dir)
+
+    if text_files:
+        print(f"\nProcessing {len(text_files)} text/markdown file(s)...")
+        text_docs = create_text_documents(text_files)
+        all_documents.extend(text_docs)
+    else:
+        print("No .txt / .md files found — skipping text ingestion.")
 
     # ── Guard ─────────────────────────────────────────────────────────────────
     if not all_documents:

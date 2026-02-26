@@ -143,6 +143,7 @@ def generate_final_answer(chunks: List, query: str) -> str:
 
             context_header = f"--- Document {i + 1} ---"
             context_header += f"\nSource: {source_file}"
+            context_header += f"\nType: {source_type}"
 
             if source_type == "excel":
                 sheet_name = metadata.get("sheet_name", section_title)
@@ -158,7 +159,8 @@ def generate_final_answer(chunks: List, query: str) -> str:
                 context_header += (
                     "\n[Tabular data — treat values as structured records]"
                 )
-            else:
+
+            elif source_type == "pdf":
                 page_number = metadata.get("page_number")
                 page_span = metadata.get("page_span")
 
@@ -177,6 +179,14 @@ def generate_final_answer(chunks: List, query: str) -> str:
                     context_header += f"\n[Contains: {', '.join(content_indicators)}]"
                 if ai_summarized:
                     context_header += "\n[AI-enhanced summary]"
+
+            else:
+                # "text" | "markdown"
+                page_number = metadata.get("page_number")
+                context_header += f"\nSection: {section_title}"
+                if page_number:
+                    label = "Paragraph" if source_type == "text" else "Section index"
+                    context_header += f"\n{label}: {page_number}"
 
             context_header += f"\nChunk: {chunk_index}"
 
@@ -205,8 +215,10 @@ RETRIEVED DOCUMENTS:
 INSTRUCTIONS:
 - Provide a clear, comprehensive answer using the information above.
 - Adapt your citation style to the source type:
-    • PDF:   "According to [filename] ([Section], Page [N])…"
-    • Excel: "According to [filename] (Sheet: [sheet], rows [X]–[Y])…"
+    • PDF:      "According to [filename] ([Section], Page [N])…"
+    • Excel:    "According to [filename] (Sheet: [sheet], rows [X]–[Y])…"
+    • Markdown: "According to [filename] ([Section heading])…"
+    • Text:     "According to [filename] (paragraph [N])…"
 - For Excel/tabular data: reference specific column values, highlight patterns,
   summarise aggregates, or compare rows as appropriate to the question.
 - For PDF content: use section names and page numbers to anchor your answer.
