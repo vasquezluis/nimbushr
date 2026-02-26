@@ -226,7 +226,8 @@ INSTRUCTIONS:
 - Be specific — use concrete values and details from the documents.
 - If information is insufficient, clearly state what is missing.
 - If sources conflict, acknowledge the discrepancy and explain both sides.
-- Answer must be in markdown format so that the frontend displays it nicely.
+- Answer must be in markdown format so that the frontend displays it nicely. Also, important parts
+  should be highlighted for markdown viewer (e.g. `onboarding.md` or **Section: Week Before Start Date**)
 
 ANSWER:"""
 

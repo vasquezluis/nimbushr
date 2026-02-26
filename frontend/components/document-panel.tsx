@@ -17,6 +17,9 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useFiles, useFileUrl } from "@/hooks/use-files";
 import type { FileInfo } from "@/types/files";
+import { CsvViewer } from "./csv-viewer";
+import { ExcelViewer } from "./excel-viewer";
+import { TextViewer } from "./text-viewer";
 
 interface DocumentPanelProps {
   selectedDocument: string | null;
@@ -221,7 +224,7 @@ export function DocumentPanel({
           )}
         </ScrollArea>
       ) : (
-        /* PDF Viewer */
+        /* Viewer */
         <div className="flex-1 flex flex-col min-h-0">
           {/* Viewer Header */}
           <div className="border-b border-white/5 p-3 flex items-center justify-between">
@@ -240,15 +243,41 @@ export function DocumentPanel({
             </Button>
           </div>
 
-          {/* PDF Content */}
+          {/* File Content */}
           <div className="flex-1 overflow-hidden min-h-0">
             {pdfUrl ? (
-              <PDFViewer fileUrl={pdfUrl} filename={selectedDocument} />
+              (() => {
+                const ext =
+                  selectedDocument.toLowerCase().split(".").pop() ?? "";
+                if (ext === "pdf") {
+                  return (
+                    <PDFViewer fileUrl={pdfUrl} filename={selectedDocument} />
+                  );
+                }
+                if (ext === "csv") {
+                  return (
+                    <CsvViewer fileUrl={pdfUrl} filename={selectedDocument} />
+                  );
+                }
+                if (ext === "xlsx" || ext === "xls") {
+                  return (
+                    <ExcelViewer fileUrl={pdfUrl} filename={selectedDocument} />
+                  );
+                }
+                if (ext === "txt" || ext === "md") {
+                  return (
+                    <TextViewer fileUrl={pdfUrl} filename={selectedDocument} />
+                  );
+                }
+                return (
+                  <PDFViewer fileUrl={pdfUrl} filename={selectedDocument} />
+                );
+              })()
             ) : (
               <div className="flex items-center justify-center h-full bg-white/5">
                 <div className="text-center p-8">
                   <FileText className="h-16 w-16 mx-auto text-white/40 mb-4" />
-                  <p className="text-white/60 text-sm mb-2">PDF Viewer</p>
+                  <p className="text-white/60 text-sm mb-2">File Viewer</p>
                   <p className="text-white/40 text-xs">Loading document...</p>
                 </div>
               </div>

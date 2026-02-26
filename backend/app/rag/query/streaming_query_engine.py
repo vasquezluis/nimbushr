@@ -237,8 +237,10 @@ RETRIEVED DOCUMENTS:
 INSTRUCTIONS:
 - Provide a clear, comprehensive answer using the information above.
 - Adapt your citation style to the source type:
-    • PDF:   "According to [filename] ([Section], Page [N])…"
-    • Excel: "According to [filename] (Sheet: [sheet], rows [X]–[Y])…"
+    • PDF:      "According to [filename] ([Section], Page [N])…"
+    • Excel:    "According to [filename] (Sheet: [sheet], rows [X]–[Y])…"
+    • Markdown: "According to [filename] ([Section heading])…"
+    • Text:     "According to [filename] (paragraph [N])…"
 - For Excel/tabular data: reference specific column values, highlight patterns,
   summarise aggregates, or compare rows as appropriate to the question.
 - For PDF content: use section names and page numbers to anchor your answer.
@@ -246,6 +248,8 @@ INSTRUCTIONS:
 - Be specific — use concrete values and details from the documents.
 - If information is insufficient, clearly state what is missing.
 - If sources conflict, acknowledge the discrepancy and explain both sides.
+- Answer must be in markdown format so that the frontend displays it nicely. Also, important parts
+  should be highlighted for markdown viewer (e.g. `file.md` or **Section example**)
 
 ANSWER:"""
 

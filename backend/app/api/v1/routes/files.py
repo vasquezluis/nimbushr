@@ -99,38 +99,39 @@ async def list_loaded_files(db=Depends(get_db)):
 @router.get("/files/{filename}")
 async def get_file(filename: str):
     """
-    Serve a PDF file from the data directory.
-
-    Args:
-        filename: Name of the PDF file to retrieve
-
-    Returns:
-        FileResponse with the PDF file
-
-    Raises:
-        HTTPException: If file not found or invalid filename
+    Serve a file from the correct data directory based on its extension.
+    Supports: PDF, Excel (.xlsx, .xls, .csv), and text (.txt, .md).
     """
     try:
-        # Security: Prevent directory traversal
         if ".." in filename or "/" in filename or "\\" in filename:
             raise HTTPException(status_code=400, detail="Invalid filename")
 
-        # Construct file path
-        file_path = settings.pdf_data_dir / filename
+        suffix = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
 
-        # Verify file exists and is a PDF
-        if not file_path.exists():
+        if suffix == "pdf":
+            file_path = settings.pdf_data_dir / filename
+            media_type = "application/pdf"
+        elif suffix in ("xlsx", "xls"):
+            file_path = settings.excel_data_dir / filename
+            media_type = (
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        elif suffix == "csv":
+            file_path = settings.excel_data_dir / filename
+            media_type = "text/csv"
+        elif suffix in ("txt", "md"):
+            file_path = settings.text_data_dir / filename
+            media_type = "text/plain; charset=utf-8"
+        else:
+            raise HTTPException(
+                status_code=400, detail=f"Unsupported file type: .{suffix}"
+            )
+
+        if not file_path.exists() or not file_path.is_file():
             raise HTTPException(status_code=404, detail=f"File not found: {filename}")
 
-        if not file_path.is_file():
-            raise HTTPException(status_code=400, detail="Path is not a file")
-
-        if file_path.suffix.lower() != ".pdf":
-            raise HTTPException(status_code=400, detail="Only PDF files are supported")
-
-        # Return the file
         return FileResponse(
-            path=str(file_path), media_type="application/pdf", filename=filename
+            path=str(file_path), media_type=media_type, filename=filename
         )
 
     except HTTPException:
