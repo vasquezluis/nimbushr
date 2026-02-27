@@ -1,15 +1,20 @@
+import type { GraphNode } from "@/types/query";
+
+interface Source {
+  file: string;
+  chunk_index: number;
+  has_tables: boolean;
+  has_images: boolean;
+  ai_summarized: boolean;
+}
+
 export interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
-  sources?: Array<{
-    file: string;
-    chunk_index: number;
-    has_tables: boolean;
-    has_images: boolean;
-    ai_summarized: boolean;
-  }>;
+  sources?: Source[];
+  graphTraversal?: GraphNode[];
   isStreaming?: boolean;
   isTruncated?: boolean;
 }

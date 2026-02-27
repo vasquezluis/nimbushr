@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { streamQuery } from "@/api/query";
-import type { Source, UseStreamingQueryResult } from "@/types/query";
+import type { GraphNode, Source, UseStreamingQueryResult } from "@/types/query";
 
 export function useStreamingQuery(): UseStreamingQueryResult {
   const [isStreaming, setIsStreaming] = useState(false);
@@ -12,6 +12,7 @@ export function useStreamingQuery(): UseStreamingQueryResult {
   const abortControllerRef = useRef<AbortController | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
   const [isTruncated, setIsTruncated] = useState(false);
+  const [graphTraversal, setGraphTraversal] = useState<GraphNode[]>([]);
 
   const cancel = useCallback(() => {
     if (abortControllerRef.current) {
@@ -30,6 +31,7 @@ export function useStreamingQuery(): UseStreamingQueryResult {
     setSources([]);
     setStatus("Starting...");
     setIsTruncated(false);
+    setGraphTraversal([]);
 
     // Create new abort controller
     abortControllerRef.current = new AbortController();
@@ -46,6 +48,10 @@ export function useStreamingQuery(): UseStreamingQueryResult {
           case "sources":
             setSources(event.data);
             setStatus(null);
+            break;
+
+          case "graph":
+            setGraphTraversal(event.data);
             break;
 
           case "token":
@@ -100,5 +106,6 @@ export function useStreamingQuery(): UseStreamingQueryResult {
     status,
     rateLimitedUntil,
     isTruncated,
+    graphTraversal,
   };
 }

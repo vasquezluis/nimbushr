@@ -12,12 +12,17 @@ The flow:
 """
 
 from difflib import SequenceMatcher
-from typing import Optional
+from typing import Optional, TypedDict
 
 import networkx as nx
 
 from app.rag.graph.entity_extractor import extract_entities_from_query
 from app.rag.graph.knowledge_graph import _normalize_name
+
+
+class GraphTraversalResult(TypedDict):
+    chunk_indices: list[int]
+    matched_nodes: list[dict]  # {name, entity_type, chunk_indices, neighbors}
 
 
 def _similarity(a: str, b: str) -> float:
@@ -122,7 +127,7 @@ def retrieve_chunks_from_graph(
     query: str,
     graph: Optional[nx.DiGraph],
     max_chunks: int = 5,
-) -> list[int]:
+) -> GraphTraversalResult:
     """
     Main entry point for graph retrieval.
     Returns a list of chunk_indices relevant to the query.
@@ -135,12 +140,15 @@ def retrieve_chunks_from_graph(
     Returns:
         List of chunk_indices to fetch from the vector store.
         Empty list if graph is None or nothing relevant found.
+        Traversal metadata for frontend visualization.
     """
+
+    empty_result: GraphTraversalResult = {"chunk_indices": [], "matched_nodes": []}
 
     # Graceful fallback — if no graph exists yet, return nothing
     # The hybrid merger will just use vector results only
     if graph is None:
-        return []
+        return empty_result
 
     # Step 1: Extract entities from the query
     # We reuse the same extractor but chunk_index=-1 marks it as a query
@@ -148,12 +156,13 @@ def retrieve_chunks_from_graph(
 
     if not entities:
         print("  Graph: no entities found in query")
-        return []
+        return empty_result
 
     print(f"  Graph: found {len(entities)} entities in query")
 
     # Step 2: Find matching nodes and collect chunk indices
     all_chunk_indices: set[int] = set()
+    matched_nodes: list[dict] = []
 
     for entity in entities:
         entity_name = _normalize_name(entity["name"])
@@ -169,11 +178,40 @@ def retrieve_chunks_from_graph(
             indices = get_neighboring_chunks(graph, node_id, hops=1)
             all_chunk_indices.update(indices)
 
-    if not all_chunk_indices:
-        print("  Graph: no chunks found via graph traversal")
-        return []
+            # Collect neighbor info for visualization
+            neighbors = []
+            for neighbor in graph.successors(node_id):
+                neighbors.append(
+                    {
+                        "name": neighbor,
+                        "relation": graph.edges[node_id, neighbor].get(
+                            "relations", ["related_to"]
+                        )[0],
+                        "direction": "outgoing",
+                    }
+                )
+            for neighbor in graph.predecessors(node_id):
+                neighbors.append(
+                    {
+                        "name": neighbor,
+                        "relation": graph.edges[neighbor, node_id].get(
+                            "relations", ["related_to"]
+                        )[0],
+                        "direction": "incoming",
+                    }
+                )
 
-    # Cap results — don't overwhelm the context window
-    result = list(all_chunk_indices)[:max_chunks]
-    print(f"  Graph: returning {len(result)} chunk indices → {result}")
-    return result
+            matched_nodes.append(
+                {
+                    "name": node_id,
+                    "entity_type": graph.nodes[node_id].get("entity_type", "Unknown"),
+                    "query_entity": entity_name,  # what the query asked for
+                    "chunk_indices": list(indices),
+                    "neighbors": neighbors[:8],  # cap to avoid huge payloads
+                }
+            )
+
+    result_indices = list(all_chunk_indices)[:max_chunks]
+    print(f"  Graph: returning {len(result_indices)} chunk indices → {result_indices}")
+
+    return {"chunk_indices": result_indices, "matched_nodes": matched_nodes}

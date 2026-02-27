@@ -1,18 +1,12 @@
 "use client";
 
 import { format } from "date-fns";
-import {
-  AlertCircle,
-  Bot,
-  FileText,
-  Image,
-  Sparkles,
-  Table,
-  User,
-} from "lucide-react";
+import { AlertCircle, Bot, User } from "lucide-react";
+import { GraphTraversal } from "@/components/graph-traversal";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { Badge } from "@/components/ui/badge";
 import type { MessageBubbleProps } from "@/types/chat";
+
+import { Sources } from "./Sources";
 
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
@@ -89,53 +83,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
         {/* Sources */}
         {message.sources && message.sources.length > 0 && (
-          <div className="space-y-2 w-full">
-            <p className="text-xs text-white/40 font-medium px-1">Sources:</p>
-            <div className="space-y-1.5">
-              {message.sources.map((source, idx) => (
-                <div
-                  // biome-ignore lint/suspicious/noArrayIndexKey: Change this when save messages to database
-                  key={idx}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/8 hover:border-white/15 transition-all duration-200 group/source"
-                >
-                  <FileText className="h-3.5 w-3.5 text-white/40 shrink-0" />
-                  <span className="text-xs text-white/60 font-mono flex-1 truncate">
-                    {source.file}
-                  </span>
-                  <span className="text-xs text-white/30">
-                    #{source.chunk_index}
-                  </span>
-                  <div className="flex gap-1">
-                    {source.ai_summarized && (
-                      <Badge
-                        variant="outline"
-                        className="h-5 px-1.5 text-[10px] bg-purple-500/10 border-purple-500/30 text-purple-300 hover:bg-purple-500/20"
-                      >
-                        <Sparkles className="h-2.5 w-2.5 mr-0.5" />
-                        AI
-                      </Badge>
-                    )}
-                    {source.has_tables && (
-                      <Badge
-                        variant="outline"
-                        className="h-5 px-1.5 text-[10px] bg-green-500/10 border-green-500/30 text-green-300"
-                      >
-                        <Table className="h-2.5 w-2.5 mr-0.5" />
-                      </Badge>
-                    )}
-                    {source.has_images && (
-                      <Badge
-                        variant="outline"
-                        className="h-5 px-1.5 text-[10px] bg-blue-500/10 border-blue-500/30 text-blue-300"
-                      >
-                        <Image className="h-2.5 w-2.5 mr-0.5" />
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Sources sources={message.sources} />
+        )}
+
+        {message.graphTraversal && message.graphTraversal.length > 0 && (
+          <GraphTraversal nodes={message.graphTraversal} />
         )}
 
         {/* Timestamp */}

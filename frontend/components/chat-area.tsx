@@ -29,6 +29,7 @@ export function ChatArea() {
     status,
     rateLimitedUntil,
     isTruncated,
+    graphTraversal,
   } = useStreamingQuery();
 
   useEffect(() => {
@@ -49,6 +50,10 @@ export function ChatArea() {
               ...lastMessage,
               content: streamingAnswer,
               sources: sources.length > 0 ? sources : lastMessage.sources,
+              graphTraversal:
+                graphTraversal.length > 0
+                  ? graphTraversal
+                  : lastMessage.graphTraversal,
             },
           ];
         }
@@ -67,7 +72,7 @@ export function ChatArea() {
         ];
       });
     }
-  }, [isStreaming, streamingAnswer, sources]);
+  }, [isStreaming, streamingAnswer, sources, graphTraversal]);
 
   // Finalize message when streaming completes
   useEffect(() => {

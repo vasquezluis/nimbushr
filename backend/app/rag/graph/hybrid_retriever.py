@@ -11,14 +11,22 @@ This way chunks that are semantically similar AND structurally
 connected to the query entities always rise to the top.
 """
 
-from typing import Optional
+from typing import Optional, TypedDict
 
 import networkx as nx
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 
-from app.rag.graph.graph_retriever import retrieve_chunks_from_graph
+from app.rag.graph.graph_retriever import (
+    GraphTraversalResult,
+    retrieve_chunks_from_graph,
+)
 from app.settings import settings
+
+
+class HybridRetrievalResult(TypedDict):
+    chunks: list[Document]
+    graph_traversal: list[dict]  # matched_nodes for frontend
 
 
 def _fetch_chunks_by_indices(db: Chroma, chunk_indices: list[int]) -> list[Document]:
@@ -75,9 +83,11 @@ def hybrid_retrieve(
     print(f"  Vector: returned {len(vector_chunks)} chunks → indices {vector_indices}")
 
     # --- Graph retrieval ---
-    graph_indices = set(
-        retrieve_chunks_from_graph(query, graph, max_chunks=settings.retrieval_k)
+    graph_result: GraphTraversalResult = retrieve_chunks_from_graph(
+        query, graph, max_chunks=settings.retrieval_k
     )
+    graph_indices = set(graph_result["chunk_indices"])
+    graph_traversal = graph_result["matched_nodes"]
 
     # --- Only use graph results that OVERLAP with vector results ---
     # OR are from a completely different source_file than vector results
@@ -146,4 +156,7 @@ def hybrid_retrieve(
     final_chunks = final_chunks[: settings.top_k_chunks]
     print(f"  Hybrid: returning {len(final_chunks)} final chunks")
 
-    return final_chunks
+    return {
+        "chunks": final_chunks,
+        "graph_traversal": graph_traversal,
+    }

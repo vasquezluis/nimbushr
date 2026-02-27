@@ -39,7 +39,9 @@ async def run_streaming_query(
         yield {"type": "status", "data": "Retrieving relevant documents..."}
 
         # Retrieve chunks
-        chunks = hybrid_retrieve(query, db, graph)
+        result = hybrid_retrieve(query, db, graph)
+        chunks = result["chunks"]
+        graph_traversal = result["graph_traversal"]
 
         if not chunks:
             yield {
@@ -55,6 +57,10 @@ async def run_streaming_query(
 
         # Status update: Generating answer
         yield {"type": "status", "data": "Generating answer..."}
+
+        # Yield graph traversal as its own event before streaming the answer
+        if graph_traversal:
+            yield {"type": "graph", "data": graph_traversal}
 
         # Stream the answer (includes sources, tokens, and done events)
         async for event in stream_answer(chunks, query):

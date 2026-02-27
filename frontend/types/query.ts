@@ -18,7 +18,7 @@ export interface QueryResponse {
 }
 
 export interface StreamEvent {
-  type: "status" | "sources" | "token" | "done" | "error";
+  type: "status" | "sources" | "token" | "done" | "error" | "graph";
   // biome-ignore lint/suspicious/noExplicitAny: TODO: type data com from backend
   data: any;
   num_chunks?: number;
@@ -35,4 +35,19 @@ export interface UseStreamingQueryResult {
   status: string | null;
   rateLimitedUntil: number | null;
   isTruncated: boolean;
+  graphTraversal: GraphNode[];
+}
+
+export interface GraphNeighbor {
+  name: string;
+  relation: string;
+  direction: "incoming" | "outgoing";
+}
+
+export interface GraphNode {
+  name: string;
+  entity_type: string;
+  query_entity: string;
+  chunk_indices: number[];
+  neighbors: GraphNeighbor[];
 }
