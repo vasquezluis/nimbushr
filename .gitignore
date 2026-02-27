@@ -14,3 +14,4 @@ wheels/
 
 # Stores
 chroma_db
+graph_db

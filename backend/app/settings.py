@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     # Retriever Config
     # ======================
     top_k_chunks: int = 3
+    retrieval_k: int = (
+        5  # How many each retriever fetches before merging (vector/graph)
+    )
     use_mmr: bool = True
     max_context_length: int = 8000
     use_reranking: bool = True

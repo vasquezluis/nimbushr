@@ -1,14 +1,15 @@
+from contextlib import asynccontextmanager
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-from dotenv import load_dotenv
-
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from app.limiter import limiter
 
+from app.api.v1.routes import files, query
+from app.limiter import limiter
+from app.rag.graph.knowledge_graph import load_graph
 from app.rag.query.vector_store import load_vector_store
-from app.api.v1.routes import query, files
 
 load_dotenv()
 
@@ -17,6 +18,9 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     print("Loading vector store at startup...")
     app.state.db = load_vector_store()
+
+    print("Loading knowledge graph at startup...")
+    app.state.graph = load_graph()
 
     yield
 

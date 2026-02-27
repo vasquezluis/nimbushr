@@ -7,6 +7,12 @@ from typing import List
 
 from langchain_core.documents import Document
 
+from app.rag.graph.entity_extractor import extract_entities_from_chunk
+from app.rag.graph.knowledge_graph import (
+    build_graph_from_extractions,
+    merge_duplicate_nodes,
+    save_graph,
+)
 from app.rag.ingest.ai_summarizer import summarise_chunks
 from app.rag.ingest.document_processor import create_chunks_by_title
 from app.rag.ingest.excel_document_processor import create_excel_documents
@@ -82,8 +88,52 @@ def run_complete_ingestion_pipeline() -> object:
     # ── Guard ─────────────────────────────────────────────────────────────────
     if not all_documents:
         raise ValueError(
-            "No documents found to process! Add PDF or Excel files to the data directory."
+            "No documents found to process! Addfiles to the data directories."
         )
+
+    # ── Knowledge Graph ───────────────────────────────────────────────────────
+    # Build the graph from ALL documents (PDFs, Excel, text) after they're
+    # all collected. We extract entities from each doc's page_content.
+    print(f"\nBuilding knowledge graph from {len(all_documents)} chunks...")
+
+    extractions = []
+
+    for doc in all_documents:
+        chunk_index = doc.metadata.get("chunk_index", 0)
+        source_file = doc.metadata.get("source_file", "unknown")
+
+        result = extract_entities_from_chunk(
+            chunk_text=doc.page_content,
+            source_file=source_file,
+            chunk_index=chunk_index,
+        )
+
+        # inject section_title as an entity if it exists
+        # This ensures section headings are always findable in the graph
+        # even if the LLM didn't extract them from the chunk content
+        section_title = doc.metadata.get("section_title")
+        if section_title and section_title != "Unknown Section":
+            result["entities"].append(
+                {
+                    "name": section_title,
+                    "type": "Section",
+                    "description": f"Section from {source_file}",
+                }
+            )
+            # Also link the section to the source document
+            result["relationships"].append(
+                {
+                    "source": source_file,
+                    "target": section_title,
+                    "relation": "contains_section",
+                }
+            )
+
+        extractions.append((result, source_file, chunk_index))
+
+    graph = build_graph_from_extractions(extractions)
+    graph = merge_duplicate_nodes(graph)
+    save_graph(graph)
 
     # ── Vector Store ──────────────────────────────────────────────────────────
     print(f"\nTotal documents to index: {len(all_documents)}")

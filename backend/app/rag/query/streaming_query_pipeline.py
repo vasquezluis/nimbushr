@@ -3,18 +3,21 @@ Streaming Query Pipeline
 Handles RAG queries with real-time token streaming
 """
 
-from typing import AsyncGenerator, Dict, Any
+from typing import Any, AsyncGenerator, Dict
+
 from langchain_chroma import Chroma
+
+from app.rag.graph.hybrid_retriever import hybrid_retrieve
 from app.settings import settings
+
 from .streaming_query_engine import (
-    retrieve_chunks_async,
     rerank_chunks_async,
     stream_answer,
 )
 
 
 async def run_streaming_query(
-    query: str, db: Chroma
+    query: str, db: Chroma, graph=None
 ) -> AsyncGenerator[Dict[str, Any], None]:
     """
     Run streaming query pipeline that yields tokens in real-time.
@@ -36,7 +39,7 @@ async def run_streaming_query(
         yield {"type": "status", "data": "Retrieving relevant documents..."}
 
         # Retrieve chunks
-        chunks = await retrieve_chunks_async(db, query)
+        chunks = hybrid_retrieve(query, db, graph)
 
         if not chunks:
             yield {

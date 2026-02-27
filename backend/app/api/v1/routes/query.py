@@ -52,10 +52,12 @@ async def query_rag_stream(
     - error: Error occurred
     """
 
+    graph = getattr(request.app.state, "graph", None)
+
     async def event_generator():
         """Generate Server-Sent Events from the streaming pipeline."""
         try:
-            async for event in run_streaming_query(query_request.query, db):
+            async for event in run_streaming_query(query_request.query, db, graph):
                 # Format as SSE: data: {json}\n\n
                 yield f"data: {json.dumps(event)}\n\n"
 
