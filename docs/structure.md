@@ -21,14 +21,14 @@ User Question
 
          Both results
               ↓
-        Hybrid Merger
-        (scoring + dedup)
-              ↓
-        Reranker (cross-encoder)
-              ↓
-        LLM (GPT-4o, streaming)
-              ↓
-        Answer + Sources + Graph Traversal
+         Hybrid Merger
+         (scoring + dedup)
+               ↓
+         Reranker (cross-encoder)
+               ↓
+         LLM (GPT-4o, streaming)
+               ↓
+         Answer + Sources + Graph Traversal
 ```
 
 ---
@@ -58,11 +58,11 @@ AI summarizer                ↓                       ↓
   ↓                          ↓                       ↓
             all_documents (LangChain Documents)
                              ↓
-                  ┌──────────┴─────────────┐
-                  ↓                        ↓
-            Vector Store             Knowledge Graph
-            (ChromaDB)               (NetworkX → JSON)
-            chroma_db/               graph_db/knowledge_graph.json
+                  ┌──────────┴───────────┐
+                  ↓                      ↓
+            Vector Store           Knowledge Graph
+            (ChromaDB)             (NetworkX → JSON)
+            chroma_db/             graph_db/knowledge_graph.json
 ```
 
 ---
@@ -72,33 +72,37 @@ AI summarizer                ↓                       ↓
 ```
 backend/
 ├── app/
-│   ├── settings.py                        # Centralized config (Pydantic)
-│   ├── main.py                            # FastAPI app + lifespan
-│   ├── limiter.py                         # Rate limiting (slowapi)
-│   ├── ingest.py                          # Ingestion entry point
+│   ├── settings.py                          # Centralized config (Pydantic)
+│   ├── main.py                              # FastAPI app + lifespan
+│   ├── limiter.py                           # Rate limiting (slowapi)
+│   ├── ingest.py                            # Ingestion entry point
 │   ├── api/
 │   │   └── v1/routes/
-│   │       ├── query.py                   # /query and /query/stream endpoints
-│   │       └── files.py                   # /files endpoints
+│   │       ├── query.py                     # /query and /query/stream endpoints
+│   │       └── files.py                     # /files endpoints
 │   ├── rag/
 │   │   ├── ingest/
-│   │   │   ├── ingest_pipeline.py         # Orchestrates full ingestion
-│   │   │   ├── document_processor.py      # PDF chunking (chunk_by_title)
-│   │   │   ├── content_analyzer.py        # Extracts tables, images, section titles
-│   │   │   ├── ai_summarizer.py           # GPT-4o summaries for complex chunks
-│   │   │   ├── vector_store.py            # ChromaDB creation
-│   │   │   ├── excel_document_processor.py
-│   │   │   └── text_document_processor.py
+│   │   │   ├── ingest_pipeline.py           # Orchestrates full ingestion
+│   │   │   ├── document_processor.py        # PDF chunking (chunk_by_title)
+│   │   │   ├── content_analyzer.py          # Extracts tables, images, section titles
+│   │   │   ├── ai_summarizer.py             # GPT-4o summaries for complex chunks
+│   │   │   ├── vector_store.py              # ChromaDB creation
+│   │   │   ├── excel_document_processor.py  # Excel chunking
+│   │   │   └── text_document_processor.py   # Text chunking
 │   │   ├── loaders/
-│   │   │   ├── pdf_loader.py
-│   │   │   ├── excel_loader.py
-│   │   │   └── text_loader.py
+│   │   │   ├── pdf_loader.py                
+│   │   │   ├── excel_loader.py              
+│   │   │   └── text_loader.py               
+│   │   ├── chunkers/
+│   │   │   ├── pdf_processor.py                
+│   │   │   ├── excel_processor.py              
+│   │   │   └── text_processor.py               
 │   │   ├── query/
 │   │   │   ├── streaming_query_pipeline.py  # Main query orchestrator
 │   │   │   ├── streaming_query_engine.py    # Retrieval + LLM streaming
 │   │   │   ├── query_pipeline.py            # Non-streaming (CLI/fallback)
 │   │   │   ├── query_engine.py              # Non-streaming engine
-│   │   │   └── vector_store.py             # ChromaDB loader
+│   │   │   └── vector_store.py              # ChromaDB loader
 │   │   └── graph/
 │   │       ├── entity_extractor.py          # LLM entity extraction (chunks + queries)
 │   │       ├── knowledge_graph.py           # NetworkX build, save, load, merge
@@ -108,8 +112,8 @@ backend/
 │   ├── pdfs/
 │   ├── excels/
 │   └── texts/
-├── chroma_db/                             # Vector store (auto-created)
-├── graph_db/                              # Graph store (auto-created)
+├── chroma_db/                               # Vector store (auto-created)
+├── graph_db/                                # Graph store (auto-created)
 │   └── knowledge_graph.json
 └── tests/
     └── simple_graph_test.py

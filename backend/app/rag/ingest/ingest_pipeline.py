@@ -13,14 +13,14 @@ from app.rag.graph.knowledge_graph import (
     merge_duplicate_nodes,
     save_graph,
 )
-from app.rag.ingest.ai_summarizer import summarise_chunks
-from app.rag.ingest.document_processor import create_chunks_by_title
-from app.rag.ingest.excel_document_processor import create_excel_documents
-from app.rag.ingest.text_document_processor import create_text_documents
-from app.rag.ingest.vector_store import create_vector_store
-from app.rag.loaders.excel_loader import load_excel_files_from_directory
 from app.rag.loaders.pdf_loader import load_pdfs_from_directory
 from app.rag.loaders.text_loader import load_text_files_from_directory
+from app.rag.loaders.excel_loader import load_excel_files_from_directory
+from app.rag.chunkers.pdf_processor import create_chunks_by_title
+from app.rag.chunkers.text_processor import create_text_documents
+from app.rag.chunkers.excel_processor import create_excel_documents
+from app.rag.ingest.ai_summarizer import summarise_chunks
+from app.rag.ingest.vector_store import create_vector_store
 from app.settings import settings
 
 
