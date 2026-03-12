@@ -11,6 +11,7 @@ This is what allows us to answer "what chunks are relevant to this concept?"
 """
 
 import json
+from itertools import combinations
 from pathlib import Path
 from typing import Optional
 
@@ -76,32 +77,23 @@ def merge_duplicate_nodes(graph: nx.DiGraph, threshold: float = 0.85) -> nx.DiGr
       (larger = more chunk_indices, meaning more document coverage)
     - Redirect all edges from merged node to the surviving node
     """
-    from difflib import SequenceMatcher
 
     nodes = list(graph.nodes())
     merged = {}  # maps node_id → surviving node_id
 
     # Find pairs to merge
-    for i, node_a in enumerate(nodes):
-        for node_b in nodes[i + 1 :]:
-            # Skip if either was already merged
-            if node_a in merged or node_b in merged:
-                continue
+    for node_a, node_b in combinations(nodes, 2):
+        # Skip filenames — they should never be merged
+        if "." in node_a or "." in node_b:
+            continue
 
-            # Skip filenames
-            if "." in node_a or "." in node_b:
-                continue
-
-            score = SequenceMatcher(None, node_a.lower(), node_b.lower()).ratio()
-            if score >= threshold:
-                # Keep the node with more chunk coverage (more authoritative)
-                chunks_a = len(graph.nodes[node_a].get("chunk_indices", []))
-                chunks_b = len(graph.nodes[node_b].get("chunk_indices", []))
-
-                survivor = node_a if chunks_a >= chunks_b else node_b
-                duplicate = node_b if survivor == node_a else node_a
-
-                merged[duplicate] = survivor
+        # Skip nodes that differ only by an ordinal/number — e.g.
+        # "Week 2 Goals" vs "Week 3 Goals" are distinct and must not merge
+        import re
+        nums_a = set(re.findall(r'\d+', node_a))
+        nums_b = set(re.findall(r'\d+', node_b))
+        if (nums_a or nums_b) and nums_a != nums_b:
+            continue
 
     if not merged:
         print("  No duplicate nodes found to merge")

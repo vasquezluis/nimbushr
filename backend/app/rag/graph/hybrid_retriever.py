@@ -117,10 +117,8 @@ def hybrid_retrieve(
 
     for idx in graph_indices:
         if idx in vector_indices:
-            # Both agree → highest confidence, big boost
             scores[idx] = scores.get(idx, 0) + 2
         else:
-            # Graph only — check if it brings a NEW source file perspective
             doc = all_chunks_by_index.get(idx)
             if doc:
                 graph_source = doc.metadata.get("source_file")
@@ -128,9 +126,10 @@ def hybrid_retrieve(
                     # New source file the vector missed → worth including
                     scores[idx] = scores.get(idx, 0) + 1
                 else:
-                    # Same source file, different chunk → lower priority
-                    # Graph is probably finding related-but-less-relevant chunks
-                    scores[idx] = scores.get(idx, 0) + 0  # no boost, won't beat vector
+                    # Same source file — previously scored 0 (excluded).
+                    # Now give +1 so specific graph matches can still surface.
+                    # The reranker will demote truly irrelevant ones afterward.
+                    scores[idx] = scores.get(idx, 0) + 1
 
     # Sort by score, remove zero-score graph-only same-source chunks
     ordered_indices = sorted(

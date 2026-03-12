@@ -39,7 +39,7 @@ def find_matching_nodes(
     graph: nx.DiGraph,
     entity_name: str,
     entity_type: str = "",
-    threshold: float = 0.75,
+    threshold: float = 0.65,
 ) -> list[str]:
     """
     Find graph nodes matching an entity name.
@@ -130,28 +130,21 @@ def retrieve_chunks_from_graph(
 ) -> GraphTraversalResult:
     """
     Main entry point for graph retrieval.
-    Returns a list of chunk_indices relevant to the query.
 
-    Args:
-        query: The user's question
-        graph: The loaded NetworkX graph (can be None — graceful fallback)
-        max_chunks: Cap on how many chunk indices to return
-
-    Returns:
-        List of chunk_indices to fetch from the vector store.
-        Empty list if graph is None or nothing relevant found.
-        Traversal metadata for frontend visualization.
+    Flow:
+    1. Extract entities from query
+    2. Fuzzy-match entities to graph nodes
+    3. Score chunk indices by node specificity — nodes with fewer chunks
+       are more precise, so their indices rank higher. This prevents
+       mega-nodes like 'onboarding.md' (33 chunks) from drowning out
+       specific nodes like 'Week 3 Goals' (1 chunk).
+    4. Return top-ranked indices + traversal metadata for the frontend.
     """
-
     empty_result: GraphTraversalResult = {"chunk_indices": [], "matched_nodes": []}
 
-    # Graceful fallback — if no graph exists yet, return nothing
-    # The hybrid merger will just use vector results only
     if graph is None:
         return empty_result
 
-    # Step 1: Extract entities from the query
-    # We reuse the same extractor but chunk_index=-1 marks it as a query
     entities = extract_entities_from_query(query)
 
     if not entities:
@@ -160,8 +153,9 @@ def retrieve_chunks_from_graph(
 
     print(f"  Graph: found {len(entities)} entities in query")
 
-    # Step 2: Find matching nodes and collect chunk indices
-    all_chunk_indices: set[int] = set()
+    # index → accumulated specificity score
+    # Indices from small/specific nodes score higher than those from large generic nodes
+    index_scores: dict[int, float] = {}
     matched_nodes: list[dict] = []
 
     for entity in entities:
@@ -175,10 +169,24 @@ def retrieve_chunks_from_graph(
 
         for node_id in matching_nodes:
             print(f"  Graph: '{entity_name}' → matched node '{node_id}'")
-            indices = get_neighboring_chunks(graph, node_id, hops=1)
-            all_chunk_indices.update(indices)
+            node_chunks = graph.nodes[node_id].get("chunk_indices", [])
 
-            # Collect neighbor info for visualization
+            # Specificity: nodes with fewer chunks are more precise.
+            # "Week 3 Goals" (1 chunk) scores 1.0, "onboarding.md" (33 chunks) scores 0.03
+            specificity = 1.0 / max(len(node_chunks), 1)
+
+            # Score the node's own chunks at full weight
+            for idx in node_chunks:
+                index_scores[idx] = index_scores.get(idx, 0.0) + specificity
+
+            # Score neighbor chunks at half weight
+            for neighbor in list(graph.successors(node_id)) + list(graph.predecessors(node_id)):
+                neighbor_chunks = graph.nodes[neighbor].get("chunk_indices", [])
+                neighbor_specificity = 0.5 / max(len(neighbor_chunks), 1)
+                for idx in neighbor_chunks:
+                    index_scores[idx] = index_scores.get(idx, 0.0) + neighbor_specificity
+
+            # Collect neighbor info for frontend visualization
             neighbors = []
             for neighbor in graph.successors(node_id):
                 neighbors.append(
@@ -205,13 +213,19 @@ def retrieve_chunks_from_graph(
                 {
                     "name": node_id,
                     "entity_type": graph.nodes[node_id].get("entity_type", "Unknown"),
-                    "query_entity": entity_name,  # what the query asked for
-                    "chunk_indices": list(indices),
-                    "neighbors": neighbors[:8],  # cap to avoid huge payloads
+                    "query_entity": entity_name,
+                    "chunk_indices": list(node_chunks),
+                    "neighbors": neighbors[:8],
                 }
             )
 
-    result_indices = list(all_chunk_indices)[:max_chunks]
-    print(f"  Graph: returning {len(result_indices)} chunk indices → {result_indices}")
+    # Sort indices by score — most specific/referenced first
+    ranked_indices = sorted(
+        index_scores.keys(),
+        key=lambda i: index_scores[i],
+        reverse=True,
+    )
+    result_indices = ranked_indices[:max_chunks]
 
+    print(f"  Graph: returning {len(result_indices)} chunk indices → {result_indices}")
     return {"chunk_indices": result_indices, "matched_nodes": matched_nodes}

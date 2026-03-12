@@ -68,14 +68,14 @@ class Settings(BaseSettings):
     # ======================
     # Retriever Config
     # ======================
-    top_k_chunks: int = 3
+    top_k_chunks: int = 5
     retrieval_k: int = (
-        5  # How many each retriever fetches before merging (vector/graph)
+        8  # How many each retriever fetches before merging (vector/graph)
     )
     use_mmr: bool = True
     max_context_length: int = 8000
     use_reranking: bool = True
-    mmr_lambda: float = 0.5
+    mmr_lambda: float = 0.7
     cross_encoder_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
     # Only use AI summarization for chunks with this many tables or more
