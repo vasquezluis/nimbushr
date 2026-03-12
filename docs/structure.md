@@ -71,43 +71,39 @@ AI summarizer                ↓                       ↓
 
 ```
 backend/
-├── app/
-│   ├── settings.py                          # Centralized config (Pydantic)
-│   ├── main.py                              # FastAPI app + lifespan
-│   ├── limiter.py                           # Rate limiting (slowapi)
-│   ├── ingest.py                            # Ingestion entry point
-│   ├── api/
-│   │   └── v1/routes/
-│   │       ├── query.py                     # /query and /query/stream endpoints
-│   │       └── files.py                     # /files endpoints
-│   ├── rag/
-│   │   ├── ingest/
-│   │   │   ├── ingest_pipeline.py           # Orchestrates full ingestion
-│   │   │   ├── document_processor.py        # PDF chunking (chunk_by_title)
-│   │   │   ├── content_analyzer.py          # Extracts tables, images, section titles
-│   │   │   ├── ai_summarizer.py             # GPT-4o summaries for complex chunks
-│   │   │   ├── vector_store.py              # ChromaDB creation
-│   │   │   ├── excel_document_processor.py  # Excel chunking
-│   │   │   └── text_document_processor.py   # Text chunking
-│   │   ├── loaders/
-│   │   │   ├── pdf_loader.py                
-│   │   │   ├── excel_loader.py              
-│   │   │   └── text_loader.py               
-│   │   ├── chunkers/
-│   │   │   ├── pdf_processor.py                
-│   │   │   ├── excel_processor.py              
-│   │   │   └── text_processor.py               
-│   │   ├── query/
-│   │   │   ├── streaming_query_pipeline.py  # Main query orchestrator
-│   │   │   ├── streaming_query_engine.py    # Retrieval + LLM streaming
-│   │   │   ├── query_pipeline.py            # Non-streaming (CLI/fallback)
-│   │   │   ├── query_engine.py              # Non-streaming engine
-│   │   │   └── vector_store.py              # ChromaDB loader
-│   │   └── graph/
-│   │       ├── entity_extractor.py          # LLM entity extraction (chunks + queries)
-│   │       ├── knowledge_graph.py           # NetworkX build, save, load, merge
-│   │       ├── graph_retriever.py           # Query → entity match → chunk indices
-│   │       └── hybrid_retriever.py          # Merges vector + graph results
+    app/
+    ├── core/                          ← NEW: abstractions (interfaces/protocols)
+    │   ├── interfaces/
+    │   │   ├── vector_store.py        # AbstractVectorStore protocol
+    │   │   ├── graph_store.py         # AbstractGraphStore protocol
+    │   │   └── embedder.py            # AbstractEmbedder protocol
+    │   └── models.py                  # Shared domain models (ChunkResult, etc.)
+    │
+    ├── infrastructure/                ← NEW: concrete implementations
+    │   ├── vector_stores/
+    │   │   ├── chroma.py              # ChromaVectorStore (current logic moved here)
+    │   │   └── postgres.py            # PgVectorStore (future, just skeleton)
+    │   ├── graph_stores/
+    │   │   ├── networkx_store.py      # NetworkXGraphStore (current logic moved here)
+    │   │   └── neo4j_store.py         # Neo4jGraphStore (future skeleton)
+    │   └── embedders/
+    │       └── openai_embedder.py     # OpenAIEmbedder
+    │
+    ├── services/                      ← NEW: orchestration (replaces scattered pipeline files)
+    │   ├── ingest_service.py          # Calls loaders → chunkers → embedder → vector_store → graph_store
+    │   └── query_service.py           # Calls vector_store + graph_store → reranker → LLM
+    │
+    ├── rag/                           ← KEEP (mostly unchanged internal logic)
+    │   ├── loaders/                   # unchanged
+    │   ├── chunkers/                  # unchanged
+    │   ├── ingest/                    # ai_summarizer.py stays; vector_store.py removed
+    │   ├── query/                     # streaming_query_engine.py stays; vector_store.py removed
+    │   └── graph/                     # entity_extractor, knowledge_graph internals stay
+    │
+    ├── api/v1/routes/                 # unchanged — depends on services, not storage
+    ├── deps.py                        # UPDATED: returns AbstractVectorStore, not Chroma
+    ├── settings.py                    # ADD: VECTOR_STORE_BACKEND = "chroma" | "postgres"
+    └── main.py                        # UPDATED: uses factory to init correct stores
 ├── data/
 │   ├── pdfs/
 │   ├── excels/
